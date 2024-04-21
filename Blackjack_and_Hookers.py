@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     Blackjack()
 
-
+Tables = {}
 Players = {}
 def create_player(id):
     Players.update({id: Player(id)})
@@ -179,7 +179,10 @@ async def playblackjack(ctx):
 @bot.command()
 async def create_table(ctx):
     user_id = ctx.author.id
-
+    newid = len(Tables)+1
+    Tables.update({newid:Table(newid,user_id)})
+    returned=create_player(user_id)
+    await ctx.reply(f"Created new table {newid} with owner :{returned}")
 
 @bot.command()
 async def surrenderd(ctx):
@@ -199,10 +202,7 @@ async def stopd(ctx):
 @bot.command()
 async def hitd(ctx):
     user_id = ctx.author.id
-    try:
-        returned = hithandler(user_id)
-    except:
-        pass
+    returned = hithandler(user_id)
     await ctx.reply(f"{returned}")
 
 
