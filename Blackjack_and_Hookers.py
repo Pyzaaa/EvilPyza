@@ -105,19 +105,35 @@ def hit(playing_deck, hand):
     return hand
 
 
-def hithandler(user_id):
-    returned = hit(Players[user_id].playerdeck,Players[user_id].hand)
-    #print(returned)
-    return returned
-
-
 class Table:
     tabledeck = list(standard_deck.keys())
     Players = {}
 
     def __init__(self, id, creator_id):
         self.id = id
+        ownerid = creator_id
         Players.update({creator_id: Player(creator_id)})
+
+    def join(self, player):
+        self.Players.update({player: Player(player)})
+
+    def hit(self, player):
+        '''
+        random_card = random.choice(self.tabledeck)
+        self.Players[player].hand.append(random_card)
+        self.tabledeck.remove(random_card)'''
+        hit(self.Players[player].playerdeck, self.Players[player].hand)
+
+    def stop(self, player):
+        self.Players[player].hand, self.Players[player].score = stop(self.Players[player].hand)
+        for player.score in Players:
+            if player.score != 0:
+                print("game ended")
+
+
+
+
+
 
 
 class Player:
@@ -125,6 +141,7 @@ class Player:
     playerdeck = list(standard_deck.keys())
     wins = 0
     loses = 0
+    score = 0
 
     def __init__(self, id):
         self.id = id
@@ -161,6 +178,8 @@ if __name__ == "__main__":
 
 Tables = {}
 Players = {}
+
+
 def create_player(id):
     Players.update({id: Player(id)})
     Players[id].hand.clear()
@@ -172,38 +191,60 @@ def create_player(id):
 @bot.command()
 async def playblackjack(ctx):
     user_id = ctx.author.id
-    returned=create_player(user_id)
+    returned = create_player(user_id)
 
     await ctx.reply(f"Created player:{returned}")
+
 
 @bot.command()
 async def create_table(ctx):
     user_id = ctx.author.id
     newid = len(Tables)+1
-    Tables.update({newid:Table(newid,user_id)})
-    returned=create_player(user_id)
+    Tables.update({newid: Table(newid, user_id)})
+    returned = create_player(user_id)
     await ctx.reply(f"Created new table {newid} with owner :{returned}")
+
+
+@bot.command()
+async def join_table(ctx, *, arg):
+    user_id = ctx.author.id
+    returned = create_player(user_id)
+    Tables[arg].join(user_id)
+
+    await ctx.reply(f"joined table {arg} as {returned} with owner: {Tables[arg].ownerid}")
+
 
 @bot.command()
 async def surrenderd(ctx):
     user_id = ctx.author.id
-    Players[user_id].hand.clear()
-    Players[user_id].playerdeck = list(standard_deck.keys())
+    try:
+        Players[user_id].hand.clear()
+        Players[user_id].playerdeck = list(standard_deck.keys())
+    except KeyError:
+        await ctx.reply(f"player {user_id} doesn't exist")
 
 
 @bot.command()
 async def stopd(ctx):
     user_id = ctx.author.id
-    Players[user_id].hand, returned = stop(Players[user_id].hand)
-    Players[user_id].playerdeck = list(standard_deck.keys())
-    await ctx.reply(f"{returned}")
+    try:
+        Players[user_id].hand, returned = stop(Players[user_id].hand)
+        Players[user_id].playerdeck = list(standard_deck.keys())
+    except KeyError:
+        await ctx.reply(f"player {user_id} doesn't exist")
+    else:
+        await ctx.reply(f"{returned}")
 
 
 @bot.command()
 async def hitd(ctx):
     user_id = ctx.author.id
-    returned = hithandler(user_id)
-    await ctx.reply(f"{returned}")
+    try:
+        returned = hit(Players[user_id].playerdeck, Players[user_id].hand)
+    except KeyError:
+        await ctx.reply(f"player {user_id} doesn't exist")
+    else:
+        await ctx.reply(f"{returned}")
 
 
 
