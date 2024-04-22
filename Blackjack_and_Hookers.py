@@ -77,7 +77,7 @@ def stop(hand):
     score = 0
     i = 0
     while i < len(hand):
-        if standard_deck[hand[i]] == 11 and len(hand) > 1 and standard_deck[hand[-1]] != 11:
+        if standard_deck[hand[i]] == 11 and len(hand) > 1 and standard_deck[hand[-1]] != 11: #to sie bedzie pierdolić przy wiekszej ilości asów XD
             hand[i], hand[-1] = hand[-1], hand[i]
         if standard_deck[hand[i]] == 11 and score + 11 > 21:
             score += 1
@@ -108,27 +108,43 @@ def hit(playing_deck, hand):
 class Table:
     tabledeck = list(standard_deck.keys())
     Players = {}
+    started = False
 
     def __init__(self, id, creator_id):
         self.id = id
-        ownerid = creator_id
+        self.ownerid = creator_id
+        create_player(creator_id)
         Players.update({creator_id: Player(creator_id)})
 
     def join(self, player):
-        self.Players.update({player: Player(player)})
+        if not self.started:
+            playerid = create_player(player)
+            self.Players.update({playerid: Player(playerid)})
+            return playerid
+    #   else:
+    #        return "Game in progress"
+    def start(self):
+        self.started = True
+        for p in self.Players.values():
+            p.score = 0
+            p.hand.clear()
 
     def hit(self, player):
         '''
         random_card = random.choice(self.tabledeck)
         self.Players[player].hand.append(random_card)
         self.tabledeck.remove(random_card)'''
-        hit(self.Players[player].playerdeck, self.Players[player].hand)
+        player = int(player)    # didn't help
+        return hit(self.tabledeck, self.Players[player].hand)
 
     def stop(self, player):
         self.Players[player].hand, self.Players[player].score = stop(self.Players[player].hand)
-        for player.score in Players:
-            if player.score != 0:
-                print("game ended")
+        return self.Players[player].score
+
+    def listplayers(self):
+        for p in self.Players.keys():
+            print(p)
+            return p
 
 
 
@@ -193,7 +209,7 @@ async def playblackjack(ctx):
     user_id = ctx.author.id
     returned = create_player(user_id)
 
-    await ctx.reply(f"Created player:{returned}")
+    await ctx.reply(f"Created player:{returned}, use hitd, stopd, surrenderd to play: ")
 
 
 @bot.command()
@@ -208,10 +224,28 @@ async def create_table(ctx):
 @bot.command()
 async def join_table(ctx, *, arg):
     user_id = ctx.author.id
-    returned = create_player(user_id)
-    Tables[arg].join(user_id)
-
+    arg = int(arg)
+    returned = Tables[arg].join(user_id)
     await ctx.reply(f"joined table {arg} as {returned} with owner: {Tables[arg].ownerid}")
+
+
+
+@bot.command()
+async def start_table(ctx, *, arg):
+    user_id = ctx.author.id
+    arg = int(arg)
+    Tables[arg].start()
+    await ctx.reply(f"table {arg} starting")
+
+@bot.command()
+async def listplayers(ctx, *, arg):
+    arg = int(arg)
+    returned = Tables[arg].listplayers()
+
+    # user = await bot.fetch_user(returned) # Generalnie to to powinno zwrócić usera
+    # user.mention  # a to powinno spingować tego usera, tak samo jak pinguje !Farmazon, ale nie działa XD
+
+    await ctx.reply(f"table {arg} has {returned}")
 
 
 @bot.command()
@@ -247,5 +281,16 @@ async def hitd(ctx):
         await ctx.reply(f"{returned}")
 
 
+@bot.command()
+async def tablestop(ctx, *, arg):
+    user_id = ctx.author.id
+    arg = int(arg)
+    await ctx.reply(f"{Tables[arg].stop(user_id)}")
 
+
+@bot.command()
+async def tablehit(ctx, *, arg):
+    user_id = ctx.author.id
+    arg = int(arg)
+    await ctx.reply(f"{Tables[arg].hit(user_id)}")
 
