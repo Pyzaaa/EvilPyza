@@ -1,12 +1,13 @@
 import random
 import discord
 from discord.ext import commands
+from EvilPyzaRoles import CHANNEL_ID
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix='!', intents=intents)
 # Remove the default help command -need to remove it to join 2 bots together
 bot.remove_command('help')
-
+KASYNO = 1232060058305564722
 
 standard_deck = {
     '2 of Hearts': 2,
@@ -130,10 +131,6 @@ class Table:
             p.hand.clear()
 
     def hit(self, player):
-        '''
-        random_card = random.choice(self.tabledeck)
-        self.Players[player].hand.append(random_card)
-        self.tabledeck.remove(random_card)'''
         player = int(player)    # didn't help
         return hit(self.tabledeck, self.Players[player].hand)
 
@@ -200,18 +197,24 @@ def create_player(id):
     Players.update({id: Player(id)})
     Players[id].hand.clear()
     Players[id].playerdeck = list(standard_deck.keys())
-    print(Players[id])
+    print(f"{Players[id]} joined game")
     return Players[id]
 
 
 @bot.command()
 async def playblackjack(ctx):
-    user_id = ctx.author.id
-    returned = create_player(user_id)
+    if ctx.channel.id in (KASYNO, CHANNEL_ID):
+        user_id = ctx.author.id
+        returned = create_player(user_id)
+        hand = Players[user_id].hand
+        hit(Players[user_id].playerdeck, Players[user_id].hand)
+        hit(Players[user_id].playerdeck, Players[user_id].hand)
 
-    await ctx.reply(f"Created player:{returned}, use hitd, stopd, surrenderd to play: ")
+        await ctx.reply(f"Created player:{returned}, use hitd, stopd to play, your hand: {hand}")
+    else:
+        await ctx.reply("idź na #kasyno-evilpyzy")
 
-
+'''
 @bot.command()
 async def create_table(ctx):
     user_id = ctx.author.id
@@ -256,31 +259,41 @@ async def surrenderd(ctx):
         Players[user_id].playerdeck = list(standard_deck.keys())
     except KeyError:
         await ctx.reply(f"player {user_id} doesn't exist")
-
+'''
 
 @bot.command()
 async def stopd(ctx):
-    user_id = ctx.author.id
-    try:
-        Players[user_id].hand, returned = stop(Players[user_id].hand)
-        Players[user_id].playerdeck = list(standard_deck.keys())
-    except KeyError:
-        await ctx.reply(f"player {user_id} doesn't exist")
-    else:
-        await ctx.reply(f"{returned}")
+    if ctx.channel.id in (KASYNO, CHANNEL_ID):
+        user_id = ctx.author.id
+        try:
+            Players[user_id].hand, returned = stop(Players[user_id].hand)
+            Players[user_id].playerdeck = list(standard_deck.keys())
+        except KeyError:
+            await ctx.reply(f"player {user_id} doesn't exist")
+        else:
+            await ctx.reply(f"{returned}")
+            hit(Players[user_id].playerdeck, Players[user_id].hand)
+            hit(Players[user_id].playerdeck, Players[user_id].hand)
 
+            hand = Players[user_id].hand
+            await ctx.reply(f"Play again?, use hitd, stopd to play, your hand: {hand}")
+    else:
+        await ctx.reply("idź na #kasyno-evilpyzy")
 
 @bot.command()
 async def hitd(ctx):
-    user_id = ctx.author.id
-    try:
-        returned = hit(Players[user_id].playerdeck, Players[user_id].hand)
-    except KeyError:
-        await ctx.reply(f"player {user_id} doesn't exist")
+    if ctx.channel.id in (KASYNO, CHANNEL_ID):
+        user_id = ctx.author.id
+        try:
+            returned = hit(Players[user_id].playerdeck, Players[user_id].hand)
+        except KeyError:
+            await ctx.reply(f"player {user_id} doesn't exist")
+        else:
+            await ctx.reply(f"{returned}")
     else:
-        await ctx.reply(f"{returned}")
+        await ctx.reply("idź na #kasyno-evilpyzy")
 
-
+'''
 @bot.command()
 async def tablestop(ctx, *, arg):
     user_id = ctx.author.id
@@ -293,4 +306,4 @@ async def tablehit(ctx, *, arg):
     user_id = ctx.author.id
     arg = int(arg)
     await ctx.reply(f"{Tables[arg].hit(user_id)}")
-
+'''
