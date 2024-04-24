@@ -29,3 +29,10 @@
 - table (blackjack)
 - ~~fix code~~
 - card images
+- add economy to Blackjack/buckshot
+- blackjack dealer play
+- buckshot fix more than 1 PvE game at the same time
+- make usermentions instead of ID printing
+- economy shows 2h behind
+- economy better saving?
+

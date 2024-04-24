@@ -13,198 +13,194 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # Remove the default help command -need to remove it to join 2 bots together
 bot.remove_command('help')
 
-SHELLS = ["blank", "live"]
-sr_players = {}
-sessions = {}
+SHELLS = ["blank", "live"]  # shells defined
+sr_players = {}  # dictionary for players in game
+sessions = {}  # dictionary for sessions
 
-try:
-    class Player:
-        score = 0
+class Player:
+    score = 0  # unused
 
-        def __init__(self, userid, health, opponent):  # dealerID is 69
-            self.id = userid
-            self.health = health
-            self.opponent = opponent
+    def __init__(self, userid, health, opponent):  # dealerID is 69
+        self.id = userid
+        self.health = health
+        self.opponent = opponent  # for finding who the player plays agains
 
-        def __str__(self):
-            return f"{self.id}"
+    def __str__(self):
+        return f"{self.id}"
 
 
-    class Shotgun:
-        magazine = []
-        turn = 69
-        in_use = False
-        Player2 = 69
+class Shotgun:
+    magazine = []
+    turn = 69  # for turntracking
+    in_use = False
+    Player2 = 69  # if unchanged, Player 2 is a dealer, there will only be one dealer so more than 1 dealer game will bug
 
-        def __init__(self, gameid):
-            self.id = gameid
-            self.Player1 = gameid
+    def __init__(self, gameid):  # when session created, creator will be player 1, his ID will be game ID
+        self.id = gameid
+        self.Player1 = gameid
 
-        def start(self, playerid, opponent):
-            if not self.in_use:
-                self.magazine.clear()
-                sr_players.update({playerid: Player(playerid, random.choice(range(2, 4)), opponent)})
-                sr_players.update({sr_players[playerid].opponent: Player(sr_players[playerid].opponent,
-                                                                         sr_players[playerid].health, playerid)})
-                self.Player2 = sr_players[playerid].opponent
-                self.in_use = True
-                return self.load()
+    def start(self, playerid, opponent):  # creates players and starts session
+        if not self.in_use:  # shouldn't try to start when game already started
+            self.magazine.clear()  # clear magazine if it's not empty for some reason
+            sr_players.update({playerid: Player(playerid, random.choice(range(2, 4)), opponent)})  # create player 1 object
+            sr_players.update({sr_players[playerid].opponent: Player(sr_players[playerid].opponent,  # create player 2 object using player 1, could also use opponent arg i guess
+                                                                     sr_players[playerid].health, playerid)})
+            self.Player2 = sr_players[playerid].opponent  # save opponent as player 2
+            self.in_use = True  # marks session as started
+            return self.load()
+        else:
+            return "Already in use"
+
+    def load(self):  # loads random number of shells into magazine in random order
+        number = random.choice(range(2, 9))  # number of shells
+        i = 0
+        while i <= number:
+            self.magazine.append(random.choice(SHELLS))
+            i += 1
+        lives = self.magazine.count('live')
+        while lives == len(self.magazine) or lives == 0:  # if there's only one type of shells, change some
+            self.magazine[random.choice(range(number))] = 'blank'
+            self.magazine[random.choice(range(number))] = 'live'
+            lives = self.magazine.count('live')  # recount live shells
+        mag_content = f"{lives} live shells, {len(self.magazine) - lives} blanks"  # for printing mag contents
+        self.turn = self.id  # Set player 1 as player, idk if it should still be there
+        print(mag_content)
+        return mag_content  # return printable mag contents for other functions
+
+    def shoot(self, target):  # shoots target, checks if they still live
+        if self.magazine and self.magazine[0] == "live":
+            sr_players[target].health -= 1  # reduce health on live shell
+            self.magazine.pop(0)  # remove expended shell
+            self.turnswitch()  # swap player turns
+            if sr_players[target].health == 0:
+                self.in_use = False  # end session if player dies
+                return f"***gunshot*** \n**{target} is dead**"
+            if not self.magazine:  # reload magazine on empty
+                loaded = self.load()
+                return f"***gunshot*** \n {loaded} Your turn: {str(self.turn)}"
+            return f"***gunshot*** \n Your turn: {str(self.turn)}"
+        elif self.magazine and self.magazine[0] == "blank":
+            self.magazine.pop(0)  # remove expended shell
+            if target != self.turn:
+                self.turnswitch()  # switch player turns if player tried to shoot opponent
+            if not self.magazine:
+                loaded = self.load()  # reload magazine on empty
+                return "***gunshot*** \nYour turn: " + loaded + str(self.turn)
+            return "*click*\nYour turn: " + str(self.turn)
+
+    def turnswitch(self):  # switching current player
+        if self.turn == self.Player1:
+            self.turn = self.Player2
+        else:
+            self.turn = self.Player1
+        return self.turn
+
+    def whowins(self):  # check who won and return it
+        if sr_players[self.Player1].health < 1:
+            return self.Player2
+        elif sr_players[self.Player2].health < 1:
+            return self.Player1
+        else:
+            return False
+
+    def end(self, target):  # on game ended remove players and the session
+        if target in sessions:
+            del sessions[target]
+        elif sr_players[target].opponent in sessions:
+            del sessions[sr_players[target].opponent]
+        del sr_players[target].opponent
+        del sr_players[target]
+
+
+
+async def dealerplay(session, ctx):
+    target = session.Player1
+    while session.in_use and session.turn == 69:
+        if session.magazine.count('live') >= session.magazine.count('blank'):
+            returned = "Dealer move:\n **YOU**\n" + session.shoot(target)
+            await ctx.reply(f"{returned}")
+
+        else:
+            if session.magazine[0] == 'live':
+                returned = "Dealer move:\n Self:" + session.shoot(69)
+                await ctx.reply(f"{returned}", file=discord.File('shotgungifs/dealersuicide.gif'))
+            elif not session.magazine:
+                session.load()
             else:
-                return "Already in use"
-
-        def load(self):
-            number = random.choice(range(2, 9))
-            i = 0
-            while i <= number:
-                self.magazine.append(random.choice(SHELLS))
-                i += 1
-            lives = self.magazine.count('live')
-            while lives == len(self.magazine) or lives == 0:
-                self.magazine[random.choice(range(number))] = 'blank'
-                self.magazine[random.choice(range(number))] = 'live'
-                lives = self.magazine.count('live')
-            mag_content = f"{lives} live shells, {len(self.magazine) - lives} blanks"
-            self.turn = self.id
-            print(mag_content)
-            return mag_content
-
-        def shoot(self, target):
-            if self.magazine and self.magazine[0] == "live":
-                sr_players[target].health -= 1
-                self.magazine.pop(0)
-                self.turnswitch()
-                if sr_players[target].health == 0:
-                    self.in_use = False
-                    return f"***gunshot*** \n**{target} is dead**"
-                if not self.magazine:
-                    loaded = self.load()
-                    return f"***gunshot*** \n {loaded} Your turn: {str(self.turn)}"
-                return f"***gunshot*** \n Your turn: {str(self.turn)}"
-            elif self.magazine and self.magazine[0] == "blank":
-                self.magazine.pop(0)
-                if target != self.turn:
-                    self.turnswitch()
-                if not self.magazine:
-                    loaded = self.load()
-                    return "***gunshot*** \nYour turn: " + loaded + str(self.turn)
-                return "*click*\nYour turn: " + str(self.turn)
-
-        def turnswitch(self):
-            if self.turn == self.Player1:
-                self.turn = self.Player2
-            else:
-                self.turn = self.Player1
-            return self.turn
-
-        def whowins(self):
-            if sr_players[self.Player1].health < 1:
-                return self.Player2
-            elif sr_players[self.Player2].health < 1:
-                return self.Player1
-            else:
-                return False
-
-        def end(self, target):
-            if target in sessions:
-                del sessions[target]
-            elif sr_players[target].opponent in sessions:
-                del sessions[sr_players[target].opponent]
-            del sr_players[target].opponent
-            del sr_players[target]
-
-
-
-    async def dealerplay(session, ctx):
-        target = session.Player1
-        while session.in_use and session.turn == 69:
-            if session.magazine.count('live') >= session.magazine.count('blank'):
-                returned = "Dealer move:\n **YOU**\n" + session.shoot(target)
+                returned = "Dealer move:\n Self:" + session.shoot(69)
                 await ctx.reply(f"{returned}")
-
-            else:
-                if session.magazine[0] == 'live':
-                    returned = "Dealer move:\n Self:" + session.shoot(69)
-                    await ctx.reply(f"{returned}", file=discord.File('shotgungifs/dealersuicide.gif'))
-                elif not session.magazine:
-                    session.load()
-                else:
-                    returned = "Dealer move:\n Self:" + session.shoot(69)
-                    await ctx.reply(f"{returned}")
-            if not session.in_use:
-                "Game ended"
-        return "Dealer turn ended"
+        if not session.in_use:
+            "Game ended"
+    return "Dealer turn ended"
 
 
-    if __name__ == "__main__":  # testing
-        Player1 = Player(6969, 2)
-        sr_players.update({'6969': Player1})
+if __name__ == "__main__":  # testing
+    Player1 = Player(6969, 2)
+    sr_players.update({'6969': Player1})
 
 
-    @bot.command()
-    async def playshotgun(ctx, arg="", user_mention: discord.User = 69):
-        user_id = ctx.author.id
-        if ctx.channel.id in (KASYNO, CHANNEL_ID):
-            pass
-            global sessions
-            if arg == "create":
-                session = Shotgun(user_id)
-                if user_id in sessions:
-                    del sessions[user_id]
-                    sessions[user_id] = session
-                else:
-                    sessions[user_id] = session
-                await ctx.reply(
-                    "Game created, use `!playshotgun start [@user](optional)` to play:\nPlay using `!playshotgun self` and `!playshotgun opponent`")
-                return
-            if arg == "start":
-                if user_id in sessions:
-                    session = sessions[user_id]
-                else:
-                    await ctx.reply("Game not created, use `!playshotgun create`")
-                    return
-                # split to create and start?
-                if sessions[user_id].in_use:
-                    await ctx.reply("You are already playing")
-                    return
-                target = user_mention
-                if target != 69:
-                    target = target.id
-                    if target == user_id:
-                        target = 69
-                returned = session.start(user_id, target)
-                await ctx.reply(f"Game ready: \n {returned}\nhealth: {sr_players[user_id].health}", file=discord.File('shotgungifs/The_Dealer_29.gif'))
-                # discorduser = await bot.fetch_user(int(session.turn))
-                # await ctx.send(f'Your turn: {discorduser.mention}')
-                await ctx.send(f'Your turn: {session.turn}')
-            if arg == "join":
-                pass
-
+@bot.command()
+async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no user mentioned, opponent will be the dealer
+    user_id = ctx.author.id
+    if ctx.channel.id in (KASYNO, CHANNEL_ID):  # only allowed to play on correct channel
+        global sessions  # use global sessions dict
+        if arg == "create":  # create session
+            session = Shotgun(user_id)
+            if user_id in sessions:  # if there's a session already, delete it
+                del sessions[user_id]
+                sessions[user_id] = session
+            else:  # if no session exists, just add it
+                sessions[user_id] = session
+            await ctx.reply(
+                "Game created, use `!playshotgun start [@user](optional)` to play:\nPlay using `!playshotgun self` and `!playshotgun opponent`")
+            return
+        if arg == "start":  # starting session and creating players
             if user_id in sessions:
                 session = sessions[user_id]
-            elif sr_players[user_id].opponent in sessions:
-                session = sessions[sr_players[user_id].opponent]
-            if session.in_use:
-                if session.turn == user_id:
-                    if arg == "self":
-                        returned = session.shoot(user_id)
-                        await ctx.reply(f"{returned}")
-                    elif arg == "opponent":
-                        target = sr_players[user_id].opponent
-                        returned = session.shoot(target)
-                        await ctx.reply(f"{returned}")
-                    if not session.in_use:
-                        winner = session.whowins()
-                        session.end(user_id)
-                        await ctx.reply(f"**{winner} WINS**")
-                    if session.in_use and session.turn == 69:
-                        returned = await dealerplay(session, ctx)
-                        await ctx.reply(f"{returned}")
-                else:
-                    await ctx.reply("Not your turn")
             else:
-                await ctx.reply("Game not started, use `!playshotgun start` to start")
+                await ctx.reply("Game not created, use `!playshotgun create`")
+                return
+            if sessions[user_id].in_use:
+                await ctx.reply("You are already playing")
+                return
+            target = user_mention
+            if target != 69:
+                target = target.id
+                if target == user_id:  # if player pinged himself, play against dealer anyway
+                    target = 69
+            returned = session.start(user_id, target)
+            await ctx.reply(f"Game ready: \n {returned}\nhealth: {sr_players[user_id].health}", file=discord.File('shotgungifs/The_Dealer_29.gif'))
+            # discorduser = await bot.fetch_user(int(session.turn))  # should mention user instead of user_id, doesn't work
+            # await ctx.send(f'Your turn: {discorduser.mention}')
+            await ctx.send(f'Your turn: {session.turn}')
+        if arg == "join":  # for joining created, unstarted game, doesn't work
+            pass
+
+        if user_id in sessions:
+            session = sessions[user_id]
+        elif sr_players[user_id].opponent in sessions:  # when the other player has a turn, should use only session. methods after that point
+            session = sessions[sr_players[user_id].opponent]  # set session as the session where user is the opponent of the host
+            # creategame else should be here?
+        if session.in_use:  # might get referenced before assignment ??? checks if session has been started
+            if session.turn == user_id:  # checks if player has the turn
+                if arg == "self":
+                    returned = session.shoot(user_id)
+                    await ctx.reply(f"{returned}")
+                elif arg == "opponent":
+                    target = sr_players[user_id].opponent
+                    returned = session.shoot(target)
+                    await ctx.reply(f"{returned}")
+                if not session.in_use:  # if session is ended check who won and end session properly
+                    winner = session.whowins()
+                    session.end(user_id)
+                    await ctx.reply(f"**{winner} WINS**")
+                if session.in_use and session.turn == 69:  # if playing against dealer, let him play (while)
+                    returned = await dealerplay(session, ctx)
+                    await ctx.reply(f"{returned}")
+            else:
+                await ctx.reply("Not your turn")
         else:
-            await ctx.reply("idź na #kasyno-evilpyzy")
-            return
-except Exception:
-    print("XD")
+            await ctx.reply("Game not started, use `!playshotgun start` to start")
+    else:
+        await ctx.reply("idź na #kasyno-evilpyzy")
+        return
