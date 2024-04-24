@@ -78,9 +78,9 @@ def stop(hand):
     score = 0
     i = 0
     while i < len(hand):
-        if standard_deck[hand[i]] == 11 and len(hand) > 1 and standard_deck[hand[-1]] != 11: #to sie bedzie pierdolić przy wiekszej ilości asów XD
-            hand[i], hand[-1] = hand[-1], hand[i]
-        if standard_deck[hand[i]] == 11 and score + 11 > 21:
+        hand.sort()  # should put ACEs on the back
+        # TODO more ACE IFs
+        if standard_deck[hand[i]] == 11 and score + 11 > 21:  # if ace is last, count it as 1 not to lose
             score += 1
         else:
             score += standard_deck[hand[i]]
