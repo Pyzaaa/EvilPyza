@@ -27,6 +27,19 @@ class User:  # User class for user management
     def __str__(self):  # for printing user info
         return f"Money: {self.money}\nCurrent eco: {self.mex} \nLast income: {datetime.datetime.fromtimestamp(self.last_income_date).strftime('%Y-%m-%d - %H:%M')}"
 
+    def takemoney(self, amount):
+        if self.money >= amount:
+            self.money -= amount
+            saveusers()  # saves user-state after operation
+            return amount
+        else:
+            return False
+
+    def givemoney(self, amount):
+        self.money += amount
+        saveusers()  # saves user-state after operation
+        pass
+
     def income(self, date):  # generate money
         print(date)
         print(self.last_income_date)
@@ -166,4 +179,12 @@ async def eco(ctx, arg="", user_mention: discord.User = '', amount=0):  # userme
         returned = user_info(user_id, timestamp)
         await ctx.reply(returned)
 
+''' #for testing purposes only
+@bot.command(help="Economy command")
+async def takemoney_test(ctx, amount):
+    user_id = ctx.author.id
+    amount = users[user_id].takemoney(int(amount))
+    print(amount)
 
+    print(users[user_id].money)
+'''

@@ -2,6 +2,7 @@ import random
 import discord
 from discord.ext import commands
 from Blackjack_and_Hookers import KASYNO, CHANNEL_ID
+from Economy import users
 
 intents = discord.Intents.default()
 
@@ -60,6 +61,7 @@ class Shotgun:
     turn = 69  # for turntracking
     in_use = False  # for checking if game is started
     Player2 = 69  # if unchanged, Player 2 is a dealer, there will only be one dealer so more than 1 dealer game will bug
+    pool = 0  # variable for keeping bet pool
 
     def __init__(self, gameid):  # when session created, creator will be player 1, his ID will be game ID
         self.id = gameid
@@ -74,6 +76,7 @@ class Shotgun:
                     {playerid: Player(playerid, random.choice(range(2, 4)), opponent)})  # create player 1 object
                 sr_players.update({sr_players[playerid].opponent: Dealer(sr_players[playerid].opponent, sr_players[playerid].health, playerid)}) # create player 2 object using player 1, could also use opponent arg i guess
                 dealers.update({opponent: sr_players[opponent]})
+                self.pool *= 2
             else:
                 sr_players.update({playerid: Player(playerid, random.choice(range(2, 4)), opponent)})  # create player 1 object
                 sr_players.update({sr_players[playerid].opponent: Player(sr_players[playerid].opponent, sr_players[playerid].health, playerid)}) # create player 2 object using player 1, could also use opponent arg i guess
@@ -140,6 +143,7 @@ class Shotgun:
             del sessions[target]
         elif sr_players[target].opponent in sessions:
             del sessions[sr_players[target].opponent]
+        self.pool = 0  # reset pool to 0 when game ends
         del sr_players[target].opponent
         del sr_players[target]
 
@@ -150,6 +154,18 @@ if __name__ == "__main__":  # testing
     Player1 = Player(6969, 2)
     sr_players.update({'6969': Player1})
 
+
+def getsession(user_id):
+    try:
+        if user_id in sessions:
+            session = sessions[user_id]
+        elif sr_players[user_id].opponent in sessions:  # when the other player has a turn, should use only session. methods after that point
+            session = sessions[sr_players[user_id].opponent]  # set session as the session where user is the opponent of the host
+        else: return False
+        return session
+    except KeyError:
+        print("No user_id in sessions, returning False")
+        return False
 
 @bot.command()
 async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no user mentioned, opponent will be the dealer
@@ -187,11 +203,7 @@ async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no us
             await ctx.send(f'Your turn: {session.turn}')
         if arg == "join":  # for joining created, unstarted game, doesn't work
             pass
-
-        if user_id in sessions:
-            session = sessions[user_id]
-        elif sr_players[user_id].opponent in sessions:  # when the other player has a turn, should use only session. methods after that point
-            session = sessions[sr_players[user_id].opponent]  # set session as the session where user is the opponent of the host
+        session = getsession(user_id)  # moved to function
             # creategame else should be here?
         if session.in_use:  # might get referenced before assignment ??? checks if session has been started
             if session.turn == user_id:  # checks if player has the turn
@@ -204,6 +216,10 @@ async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no us
                     await ctx.reply(f"{returned}")
                 if not session.in_use:  # if session is ended check who won and end session properly
                     winner = session.whowins()
+                    try:
+                        users[winner].givemoney(session.pool)
+                    except KeyError:
+                        print(f"Tried to give dealer money? {winner} keyerror")
                     session.end(user_id)
                     await ctx.reply(f"**{winner} WINS**")
                 if session.in_use and session.turn in dealers:  # if playing against dealer, let him play (while)
@@ -217,6 +233,36 @@ async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no us
     else:
         await ctx.reply("idź na #kasyno-evilpyzy")
         return
+
+
+@bot.command()
+async def bet(ctx, game='', amount=20):
+    user_id = ctx.author.id
+    if ctx.channel.id in (KASYNO, CHANNEL_ID):  # only allowed to play on correct channel
+        if not game:
+            await ctx.reply(f"No bet game name provided, correct use !bet shotgun [amount](optional, defaults to 20)")
+            return
+        if amount < 0:
+            await ctx.reply(f"can't bet negative")
+            return
+        elif game == "shotgun":
+            session = getsession(user_id)
+            if session and not session.in_use:
+                user_id = ctx.author.id
+                amount = users[user_id].takemoney(int(amount))
+                print(amount)
+                print(users[user_id])
+                print(users[user_id].money)
+                if amount:
+                    session.pool += amount
+                    pass
+                else:
+                    await ctx.reply(f"Not enough money")
+                    return
+            else:
+                await ctx.reply(f"{user_id} is not waiting for game to start")
+        else:
+            await ctx.reply(f"unknown game")
 
 ''' for debugging dealerlist
 @bot.command()
