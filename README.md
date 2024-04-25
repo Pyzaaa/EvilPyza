@@ -23,13 +23,14 @@
 **!playshotgun start @user** - to start the session against pinged @user<br>
 **!playshotgun self** - to shoot self<br>
 **!playshotgun opponent** - to shoot opponent<br>
+**!bet shotgun [amount]** - to bet (only in PvE currently)
 
 # TODO
 - dealer (blackjack)
 - table (blackjack)
 - ~~fix code~~
 - card images
-- add economy to Blackjack/buckshot
+- add economy to Blackjack
 - blackjack dealer play
 - make usermentions instead of ID printing
 - economy shows 2h behind

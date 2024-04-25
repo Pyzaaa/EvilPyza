@@ -120,7 +120,7 @@ class Shotgun:
                 self.turnswitch()  # switch player turns if player tried to shoot opponent
             if not self.magazine:
                 loaded = self.load()  # reload magazine on empty
-                return f"***click*** \n {loaded} Your turn: {str(self.turn)}"
+                return f"*click* \n {loaded} Your turn: {str(self.turn)}"
             return "*click*\nYour turn: " + str(self.turn)
 
     def turnswitch(self):  # switching current player
@@ -250,11 +250,12 @@ async def bet(ctx, game='', amount=20):
             if session and not session.in_use:
                 user_id = ctx.author.id
                 amount = users[user_id].takemoney(int(amount))
-                print(amount)
-                print(users[user_id])
-                print(users[user_id].money)
+                #print(amount)
+                #print(users[user_id])
+                #print(users[user_id].money)        #for debugging, not needed anymore
                 if amount:
                     session.pool += amount
+                    await ctx.reply(f"Bet successful, pool: {session.pool}")
                     pass
                 else:
                     await ctx.reply(f"Not enough money")
