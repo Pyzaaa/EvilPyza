@@ -34,6 +34,23 @@ class Player:
 
 class Dealer(Player):  # child class for creating multiple dealers to play against
     isdealer = True
+    szlugen = 0
+    piwen= 0
+    def __init__(self, userid, health, opponent, pool):  # dealerID is 69
+        super().__init__(userid, health, opponent)
+        self.dealerbooster(pool)
+
+
+    def dealerbooster(self, pool):
+        if pool > 500:
+            boost_count = random.randint(0, pool // 500)
+            self.szlugen = random.randint(0, boost_count)
+            self.piwen = random.randint(0, boost_count)
+            print(f"randomizer {boost_count}, {self.szlugen}")
+
+    async def szlugenmahen(self):
+        self.szlugen -= 1
+        self.health += 1
 
     async def dealerplay(self, session, ctx):  # dealerplay function moved here, id=69 changed to self.id
         target = session.Player1
@@ -41,8 +58,10 @@ class Dealer(Player):  # child class for creating multiple dealers to play again
             if session.magazine.count('live') >= session.magazine.count('blank'):  # dealer knows number of shells but not their order
                 returned = "Dealer move:\n **YOU**\n" + session.shoot(target)      # if there are <= lives than blanks he will shoot at player
                 await ctx.reply(f"{returned}")
-
             else:
+                if self.szlugen > 0 and self.health < sr_players[target].health:  # if dealer has a cig and less than player HP, he will smoke
+                    await self.szlugenmahen()
+                    await ctx.reply(file=discord.File('shotgungifs/szlugenmachen.gif'))
                 if session.magazine[0] == 'live':   # if live in chamber dealer will print gif before shooting himself
                     returned = "Dealer move:\n Self:" + session.shoot(self.id)
                     await ctx.reply(f"{returned}", file=discord.File('shotgungifs/dealersuicide.gif'))
@@ -54,6 +73,7 @@ class Dealer(Player):  # child class for creating multiple dealers to play again
             if not session.in_use:
                 "Game ended"
         return "Dealer turn ended"
+
 
 
 class Shotgun:
@@ -74,7 +94,7 @@ class Shotgun:
                 opponent = len(dealers)
                 sr_players.update(
                     {playerid: Player(playerid, random.choice(range(2, 4)), opponent)})  # create player 1 object
-                sr_players.update({sr_players[playerid].opponent: Dealer(sr_players[playerid].opponent, sr_players[playerid].health, playerid)}) # create player 2 object using player 1, could also use opponent arg i guess
+                sr_players.update({sr_players[playerid].opponent: Dealer(sr_players[playerid].opponent, sr_players[playerid].health, playerid, self.pool)}) # create player 2 object using player 1, could also use opponent arg i guess
                 dealers.update({opponent: sr_players[opponent]})
                 self.pool *= 2
             else:
@@ -100,7 +120,8 @@ class Shotgun:
         mag_content = f"{lives} live shells, {len(self.magazine) - lives} blanks"  # for printing mag contents
         self.turn = self.id  # Set player 1 as player, idk if it should still be there
         print(mag_content)
-        return mag_content  # return printable mag contents for other functions
+        print(self.pool)
+        return f"pool: {self.pool}\n{mag_content}"  # return printable mag contents for other functions
 
     def shoot(self, target):  # shoots target, checks if they still live TODO: cleanup
         if self.magazine and self.magazine[0] == "live":
@@ -109,11 +130,18 @@ class Shotgun:
             self.turnswitch()  # swap player turns
             if sr_players[target].health == 0:
                 self.in_use = False  # end session if player dies
-                return f"***gunshot*** \n**{target} is dead**"
+                winner = self.whowins()
+                try:
+                    users[winner].givemoney(self.pool)
+                except KeyError:
+                    print(f"Tried to give dealer money? {winner} keyerror")
+                self.end(self.id)
+                return f"***gunshot*** \n**{target} is dead, {winner} WINS**, "
             if not self.magazine:  # reload magazine on empty
                 loaded = self.load()
                 return f"***gunshot*** \n {loaded} Your turn: {str(self.turn)}"
             return f"***gunshot*** \n Your turn: {str(self.turn)}"
+
         elif self.magazine and self.magazine[0] == "blank":
             self.magazine.pop(0)  # remove expended shell
             if target != self.turn:
@@ -214,14 +242,7 @@ async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no us
                     target = sr_players[user_id].opponent
                     returned = session.shoot(target)
                     await ctx.reply(f"{returned}")
-                if not session.in_use:  # if session is ended check who won and end session properly
-                    winner = session.whowins()
-                    try:
-                        users[winner].givemoney(session.pool)
-                    except KeyError:
-                        print(f"Tried to give dealer money? {winner} keyerror")
-                    session.end(user_id)
-                    await ctx.reply(f"**{winner} WINS**")
+                # moved to session.shoot if not session.in_use:  # if session is ended check who won and end session properly
                 if session.in_use and session.turn in dealers:  # if playing against dealer, let him play (while)
                     player = dealers[session.turn]
                     returned = await player.dealerplay(session, ctx)
