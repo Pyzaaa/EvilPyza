@@ -1,18 +1,8 @@
 import random
 import discord
-from discord.ext import commands
 from Blackjack_and_Hookers import KASYNO, CHANNEL_ID
 from Economy import users
-
-intents = discord.Intents.default()
-
-intents.reactions = True
-intents.members = True
-intents.guilds = True
-intents.messages = True
-bot = commands.Bot(command_prefix='!', intents=intents)
-# Remove the default help command -need to remove it to join 2 bots together
-bot.remove_command('help')
+from Importedbot import bot
 
 SHELLS = ["blank", "live"]  # shells defined
 sr_players = {}  # dictionary for players in game
@@ -56,19 +46,19 @@ class Dealer(Player):  # child class for creating multiple dealers to play again
         target = session.Player1
         while session.in_use and session.turn == self.id:  # check if game is on and it's still dealers turn
             if session.magazine.count('live') >= session.magazine.count('blank'):  # dealer knows number of shells but not their order
-                returned = "Dealer move:\n **YOU**\n" + session.shoot(target)      # if there are <= lives than blanks he will shoot at player
+                returned = "Dealer move:\n **YOU**\n" + await session.shoot(target)      # if there are <= lives than blanks he will shoot at player
                 await ctx.reply(f"{returned}")
             else:
                 if self.szlugen > 0 and self.health < sr_players[target].health:  # if dealer has a cig and less than player HP, he will smoke
                     await self.szlugenmahen()
                     await ctx.reply(file=discord.File('shotgungifs/szlugenmachen.gif'))
                 if session.magazine[0] == 'live':   # if live in chamber dealer will print gif before shooting himself
-                    returned = "Dealer move:\n Self:" + session.shoot(self.id)
+                    returned = "Dealer move:\n Self:" + await session.shoot(self.id)
                     await ctx.reply(f"{returned}", file=discord.File('shotgungifs/dealersuicide.gif'))
                 elif not session.magazine:  # if mag is empty, dealer will reload and give it to the player, might not be needed since #shoot handles that
                     session.load()
                 else:  # if dealer shoots himself with blank he will print it and have another turn in a loop
-                    returned = "Dealer move:\n Self:" + session.shoot(self.id)
+                    returned = "Dealer move:\n Self:" + await session.shoot(self.id)
                     await ctx.reply(f"{returned}")
             if not session.in_use:
                 "Game ended"
@@ -123,7 +113,7 @@ class Shotgun:
         print(self.pool)
         return f"pool: {self.pool}\n{mag_content}"  # return printable mag contents for other functions
 
-    def shoot(self, target):  # shoots target, checks if they still live TODO: cleanup
+    async def shoot(self, target):  # shoots target, checks if they still live TODO: cleanup
         if self.magazine and self.magazine[0] == "live":
             sr_players[target].health -= 1  # reduce health on live shell
             self.magazine.pop(0)  # remove expended shell
@@ -139,8 +129,9 @@ class Shotgun:
                 return f"***gunshot*** \n**{target} is dead, {winner} WINS**, "
             if not self.magazine:  # reload magazine on empty
                 loaded = self.load()
-                return f"***gunshot*** \n {loaded} Your turn: {str(self.turn)}"
-            return f"***gunshot*** \n Your turn: {str(self.turn)}"
+                return f"***gunshot*** \n {loaded} Your turn: {await discorduser_mention(self.turn)}"
+
+            return f"***gunshot*** \n Your turn: {await discorduser_mention(self.turn)}"
 
         elif self.magazine and self.magazine[0] == "blank":
             self.magazine.pop(0)  # remove expended shell
@@ -148,8 +139,9 @@ class Shotgun:
                 self.turnswitch()  # switch player turns if player tried to shoot opponent
             if not self.magazine:
                 loaded = self.load()  # reload magazine on empty
-                return f"*click* \n {loaded} Your turn: {str(self.turn)}"
-            return "*click*\nYour turn: " + str(self.turn)
+                return f"*click* \n {loaded} Your turn: {await discorduser_mention(self.turn)}"
+
+            return f"*click*\nYour turn:  {await discorduser_mention(self.turn)}"
 
     def turnswitch(self):  # switching current player
         if self.turn == self.Player1:
@@ -178,6 +170,18 @@ class Shotgun:
 # dealerplay removed
 
 
+async def discorduser_mention(fetched_id):  # cleans up code from mentions and translates ID numbers into mentions
+    try:
+        discorduser = await bot.fetch_user(fetched_id)
+        return discorduser.mention
+    except discord.errors.NotFound as e:
+        print(f"User with ID {fetched_id} not found: {e}, returning Dealer ID instead")
+        return f"Dealer {fetched_id}"
+        pass
+
+
+
+
 if __name__ == "__main__":  # testing
     Player1 = Player(6969, 2)
     sr_players.update({'6969': Player1})
@@ -195,11 +199,15 @@ def getsession(user_id):
         print("No user_id in sessions, returning False")
         return False
 
+
 @bot.command()
 async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no user mentioned, opponent will be the dealer
     user_id = ctx.author.id
     if ctx.channel.id in (KASYNO, CHANNEL_ID):  # only allowed to play on correct channel
         global sessions  # use global sessions dict
+        if arg == "":
+            await ctx.reply(
+                "No argument provided, use `!playshotgun create` to create a session and `!playshotgun start [@user](optional)` to start")
         if arg == "create":  # create session
             session = Shotgun(user_id)
             if user_id in sessions:  # if there's a session already, delete it
@@ -225,10 +233,8 @@ async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no us
                 if target == user_id:  # if player pinged himself, play against dealer anyway
                     target = 69
             returned = session.start(user_id, target)
-            await ctx.reply(f"Game ready: \n {returned}\nhealth: {sr_players[user_id].health}", file=discord.File('shotgungifs/The_Dealer_29.gif'))
-            # discorduser = await bot.fetch_user(int(session.turn))  # fixme should mention user instead of user_id, doesn't work
-            # await ctx.send(f'Your turn: {discorduser.mention}')
-            await ctx.send(f'Your turn: {session.turn}')
+            await ctx.reply(f"Game ready: \n{returned}\nhealth: {sr_players[user_id].health}", file=discord.File('shotgungifs/The_Dealer_29.gif'))
+            await ctx.send(f'Your turn: { await discorduser_mention(session.turn)}')
         if arg == "join":  # for joining created, unstarted game, doesn't work
             pass
         session = getsession(user_id)  # moved to function
@@ -236,11 +242,11 @@ async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no us
         if session.in_use:  # might get referenced before assignment ??? checks if session has been started
             if session.turn == user_id:  # checks if player has the turn
                 if arg == "self":
-                    returned = session.shoot(user_id)
+                    returned = await session.shoot(user_id)
                     await ctx.reply(f"{returned}")
                 elif arg == "opponent":
                     target = sr_players[user_id].opponent
-                    returned = session.shoot(target)
+                    returned = await session.shoot(target)
                     await ctx.reply(f"{returned}")
                 # moved to session.shoot if not session.in_use:  # if session is ended check who won and end session properly
                 if session.in_use and session.turn in dealers:  # if playing against dealer, let him play (while)
@@ -290,3 +296,17 @@ async def bet(ctx, game='', amount=20):
 @bot.command()
 async def printdealers(ctx):
     await ctx.reply(f"{dealers}")'''
+
+'''
+async def ping_user(ctx, user_id):  # to działa tylko w main EvilPyza.py
+    user: discord.User = await bot.fetch_user(int(user_id))
+    await ctx.send(f'pinging user {user.mention}')
+
+
+# for debugging pings
+@bot.command()
+async def pingme(ctx):
+
+    #user = await bot.fetch_user(ctx.author.id)
+    await ctx.send(f'pinging author {ctx.author.mention}') # to działa tutaj
+    await ping_user(ctx, ctx.author.id)'''

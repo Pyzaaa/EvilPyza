@@ -2,12 +2,8 @@ import pickle
 import datetime
 import logging
 import discord
-from discord.ext import commands
 
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix='!', intents=intents)
-# Remove the default help command -need to remove it to join 2 bots together
-bot.remove_command('help')
+from Importedbot import bot
 
 # basic Logging
 logging.basicConfig(filename='data/log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -178,6 +174,8 @@ async def eco(ctx, arg="", user_mention: discord.User = '', amount=0):  # userme
     else:  # jeżeli uzyte bez argumentu to wyprintuje info
         returned = user_info(user_id, timestamp)
         await ctx.reply(returned)
+
+
 
 ''' #for testing purposes only
 @bot.command(help="Economy command")

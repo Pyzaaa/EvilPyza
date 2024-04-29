@@ -1,12 +1,8 @@
 import random
 import discord
-from discord.ext import commands
 from EvilPyzaRoles import CHANNEL_ID
 
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix='!', intents=intents)
-# Remove the default help command -need to remove it to join 2 bots together
-bot.remove_command('help')
+from Importedbot import bot
 KASYNO = 1232060058305564722
 
 standard_deck = {
