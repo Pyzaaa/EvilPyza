@@ -32,7 +32,6 @@
 - card images
 - add economy to Blackjack
 - blackjack dealer play
-- make usermentions instead of ID printing
 - economy shows 2h behind
 - economy better saving?
 
