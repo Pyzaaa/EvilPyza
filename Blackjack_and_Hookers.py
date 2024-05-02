@@ -69,8 +69,7 @@ def surrender():
     #quit()
     pass
 
-
-def stop(hand):
+def count(hand):
     score = 0
     i = 0
     while i < len(hand):
@@ -80,6 +79,11 @@ def stop(hand):
         else:
             score += standard_deck[hand[i]]
         i += 1
+    return score
+
+def stop(hand):
+    score = count(hand)
+
     if score == 21:
         print("**************  Won  **************")
         score = "**Won**"
@@ -101,49 +105,6 @@ def hit(playing_deck, hand):
     return hand
 
 
-class Table:
-    tabledeck = list(standard_deck.keys())
-    Players = {}
-    started = False
-
-    def __init__(self, id, creator_id):
-        self.id = id
-        self.ownerid = creator_id
-        create_player(creator_id)
-        Players.update({creator_id: Player(creator_id)})
-
-    def join(self, player):
-        if not self.started:
-            playerid = create_player(player)
-            self.Players.update({playerid: Player(playerid)})
-            return playerid
-    #   else:
-    #        return "Game in progress"
-    def start(self):
-        self.started = True
-        for p in self.Players.values():
-            p.score = 0
-            p.hand.clear()
-
-    def hit(self, player):
-        player = int(player)    # didn't help
-        return hit(self.tabledeck, self.Players[player].hand)
-
-    def stop(self, player):
-        self.Players[player].hand, self.Players[player].score = stop(self.Players[player].hand)
-        return self.Players[player].score
-
-    def listplayers(self):
-        for p in self.Players.keys():
-            print(p)
-            return p
-
-
-
-
-
-
-
 class Player:
     hand = []
     playerdeck = list(standard_deck.keys())
@@ -156,6 +117,67 @@ class Player:
 
     def __str__(self):
         return f"{self.id}"
+
+
+class Table:
+    tabledeck = list(standard_deck.keys())
+    tablehand = []
+    Players = {}
+    started = False
+
+    def __init__(self, id, creator_id):
+        self.id = id
+        self.ownerid = creator_id
+        create_player(creator_id)
+        self.Players.update({creator_id: Player(creator_id)})
+
+    def join(self, player):
+        if not self.started:
+            playerid = create_player(player)
+            self.Players.update({playerid: Player(playerid)})
+            return playerid
+    #   else:
+    #        return "Game in progress"
+
+    def start(self):
+        self.started = True
+        returned = "**Game started**: \n"
+
+        for p in self.Players.values():
+            p.score = 0
+            p.hand.clear()
+            returned += f"Player {p.id} hand: {self.hit(p.id)}, "
+            returned += f"{self.hit(p.id)}\n"
+
+        hit(self.tabledeck, self.tablehand)
+        hit(self.tabledeck, self.tablehand)
+        returned += f"Table hand: {self.tablehand[1]}, *hidden card*"
+        return returned
+
+    def hit(self, player):
+        player = int(player)    # didn't help
+        return hit(self.tabledeck, self.Players[player].hand)
+
+    def stop(self, player):
+        self.Players[player].hand, self.Players[player].score = stop(self.Players[player].hand)
+        return self.Players[player].score
+
+    def play(self):
+        pass
+
+    def dealerturn(self):
+        pass
+
+    def listplayers(self):
+        for p in self.Players.keys():
+            print(p)
+            return p
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -209,15 +231,44 @@ async def playblackjack(ctx):
     else:
         await ctx.reply("idź na #kasyno-evilpyzy")
 
-'''
-@bot.command()
-async def create_table(ctx):
-    user_id = ctx.author.id
-    newid = len(Tables)+1
-    Tables.update({newid: Table(newid, user_id)})
-    returned = create_player(user_id)
-    await ctx.reply(f"Created new table {newid} with owner :{returned}")
 
+@bot.command()
+async def blackjack(ctx, arg=""):
+    current_table: Table = None
+    user_id = ctx.author.id
+    if arg == "":
+        await ctx.reply(
+            "No argument provided, use `!blackjack create` to create a table")
+    if arg == "create":  # create table
+        new_id = len(Tables)
+        for table in Tables.values():
+            if user_id in table.Players:
+                await ctx.reply(f"Already playing at table: {table.id} with owner: {table.ownerid}")
+                return
+        Tables.update({new_id: Table(new_id, user_id)})
+        returned = create_player(user_id)
+        await ctx.reply(f"Created new table {new_id} with owner :{returned}")
+        return
+
+    for table in Tables.values():
+        if user_id in table.Players:
+            current_table = table
+            break
+    if current_table is None:
+        await ctx.reply(f"Player {user_id} not found at any table use `!blackjack create` to create a table")
+        return
+
+    if arg == "start":  # tables hit method
+        returned = current_table.start()
+        await ctx.send(f"{returned}")
+
+    if arg == "hit":  # tables hit method
+        returned = current_table.hit(user_id)
+        await ctx.reply(f"{returned}")
+
+
+
+'''
 
 @bot.command()
 async def join_table(ctx, *, arg):

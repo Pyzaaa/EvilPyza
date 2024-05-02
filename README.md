@@ -10,9 +10,10 @@
 
 ### You can now play blackjack with the best discord bot out there
 ## Commands:
-**!blackjack** to log in and start playing <br>
+**!playblackjack** to log in and start playing <br>
 **!hitd** to draw a card <br>
 **!stopd** to get score
+**!blackjack** to play in a table(not implemented yet)
 
 
 ### You can now play buckshot-shotgun roulette with the best discord bot out there
@@ -26,12 +27,11 @@
 **!bet shotgun [amount]** - to bet (only in PvE currently)
 
 # TODO
-- dealer (blackjack)
-- table (blackjack)
+- dealer (blackjack) (in progress)
+- table (blackjack) (in progress)
 - ~~fix code~~
 - card images
 - add economy to Blackjack
-- blackjack dealer play
 - economy shows 2h behind
 - economy better saving?
 

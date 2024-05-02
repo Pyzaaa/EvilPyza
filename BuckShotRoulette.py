@@ -26,10 +26,10 @@ class Dealer(Player):  # child class for creating multiple dealers to play again
     isdealer = True
     szlugen = 0
     piwen= 0
+
     def __init__(self, userid, health, opponent, pool):  # dealerID is 69
         super().__init__(userid, health, opponent)
         self.dealerbooster(pool)
-
 
     def dealerbooster(self, pool):
         if pool > 500:
@@ -130,7 +130,6 @@ class Shotgun:
             if not self.magazine:  # reload magazine on empty
                 loaded = self.load()
                 return f"***gunshot*** \n {loaded} Your turn: {await discorduser_mention(self.turn)}"
-
             return f"***gunshot*** \n Your turn: {await discorduser_mention(self.turn)}"
 
         elif self.magazine and self.magazine[0] == "blank":
@@ -140,7 +139,6 @@ class Shotgun:
             if not self.magazine:
                 loaded = self.load()  # reload magazine on empty
                 return f"*click* \n {loaded} Your turn: {await discorduser_mention(self.turn)}"
-
             return f"*click*\nYour turn:  {await discorduser_mention(self.turn)}"
 
     def turnswitch(self):  # switching current player
@@ -178,8 +176,6 @@ async def discorduser_mention(fetched_id):  # cleans up code from mentions and t
         print(f"User with ID {fetched_id} not found: {e}, returning Dealer ID instead")
         return f"Dealer {fetched_id}"
         pass
-
-
 
 
 if __name__ == "__main__":  # testing
@@ -267,7 +263,7 @@ async def bet(ctx, game='', amount=20):
     user_id = ctx.author.id
     if ctx.channel.id in (KASYNO, CHANNEL_ID):  # only allowed to play on correct channel
         if not game:
-            await ctx.reply(f"No bet game name provided, correct use !bet shotgun [amount](optional, defaults to 20)")
+            await ctx.reply(f"No bet game name provided, correct use `!bet shotgun [amount](optional, defaults to 20)`")
             return
         if amount < 0:
             await ctx.reply(f"can't bet negative")
