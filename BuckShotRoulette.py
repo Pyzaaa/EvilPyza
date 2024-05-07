@@ -212,7 +212,7 @@ async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no us
             else:  # if no session exists, just add it
                 sessions[user_id] = session
             await ctx.reply(
-                "Game created, use `!playshotgun start [@user](optional)` to play:\nPlay using `!playshotgun self` and `!playshotgun opponent`")
+                "Game created, you can bet with `!bet shotgun [amount](default 20)`use `!playshotgun start [@user](optional)` to play:\nPlay using `!playshotgun self` and `!playshotgun opponent`")
             return
         if arg == "start":  # starting session and creating players
             if user_id in sessions:
@@ -278,7 +278,7 @@ async def bet(ctx, game='', amount=20):
                 #print(users[user_id].money)        #for debugging, not needed anymore
                 if amount:
                     session.pool += amount
-                    await ctx.reply(f"Bet successful, pool: {session.pool}")
+                    await ctx.reply(f"Bet successful, pool: {session.pool}, **if you recreate game now, pool will be lost**")
                     pass
                 else:
                     await ctx.reply(f"Not enough money")

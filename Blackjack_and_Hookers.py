@@ -72,12 +72,12 @@ def surrender():
 def count(hand):
     score = 0
     i = 0
+    sorted_hand = sorted(hand, key=lambda a: a[0] == "A")  # lambda checks if element starts with A, if it does return False, if it doesn't True, Trues come before Falses in sorting
     while i < len(hand):
-        sorted_hand = sorted(hand, key=lambda a: a[0] != "A") # lambda checks if element starts with A, if it does return False, if it doesn't True, Trues come before Falses in sorting
         if standard_deck[sorted_hand[i]] == 11 and score + 11 > 21:  # if ace is last, count it as 1 not to lose
             score += 1
         else:
-            score += standard_deck[hand[i]]
+            score += standard_deck[sorted_hand[i]]
         i += 1
     return score
 
@@ -146,7 +146,8 @@ class Table:
         for p in self.Players.values():
             p.score = 0
             p.hand.clear()
-            returned += f"Player {p.id} hand: {self.hit(p.id)}, "
+            returned += f"Player **{p.id}** hand: "
+            self.hit(p.id)
             returned += f"{self.hit(p.id)}\n"
 
         hit(self.tabledeck, self.tablehand)
@@ -266,6 +267,9 @@ async def blackjack(ctx, arg=""):
         returned = current_table.hit(user_id)
         await ctx.reply(f"{returned}")
 
+    if arg == "stop":  # tables hit method
+        returned = current_table.stop(user_id)
+        await ctx.send(f"{returned}")
 
 
 '''
