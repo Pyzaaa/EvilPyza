@@ -143,31 +143,58 @@ class Table:
         self.started = True
         returned = "**Game started**: \n"
 
-        for p in self.Players.values():
+        for p in self.Players.values():  # clears all players at the table and deals them 2 cards
             p.score = 0
             p.hand.clear()
             returned += f"Player **{p.id}** hand: "
             self.hit(p.id)
             returned += f"{self.hit(p.id)}\n"
 
-        hit(self.tabledeck, self.tablehand)
+        hit(self.tabledeck, self.tablehand)  # deals 2 cards to dealer and prints one and another as hidden
         hit(self.tabledeck, self.tablehand)
         returned += f"Table hand: {self.tablehand[1]}, *hidden card*"
         return returned
 
     def hit(self, player):
-        player = int(player)    # didn't help
-        return hit(self.tabledeck, self.Players[player].hand)
+        playerscore = count(hit(self.tabledeck, self.Players[player].hand))  # hit zwraca hand'a
+        if playerscore > 21:
+            return f"{self.Players[player].hand}, score: {playerscore}, **Busted**"
+        else:
+            return f"{self.Players[player].hand}, score: {playerscore}"
 
     def stop(self, player):
-        self.Players[player].hand, self.Players[player].score = stop(self.Players[player].hand)
-        return self.Players[player].score
+        self.Players[player].score = count(self.Players[player].hand)
+
+        # fixme: this works only for 1 player, need to make queue with checking if player is playing or stopped already
+        dealerscore = self.dealerturn()
+        if self.Players[player].score > 21:  # fixme: this should be checked and ended before
+            return "Already busted"
+        if dealerscore > 21:
+            return "Players win"
+        elif dealerscore < self.Players[player].score:
+            return f"{player} wins"
+        elif dealerscore == self.Players[player].score:
+            return f"tie {dealerscore}"
+        else:
+            return f"{player} Lost: {dealerscore} > {self.Players[player].score}"
+        # return self.Players[player].score
 
     def play(self):
         pass
 
-    def dealerturn(self):
+    def end(self):
+        self.tabledeck = list(standard_deck.keys())
+        self.tablehand.clear()
+        self.started = False
         pass
+
+    def dealerturn(self):
+        dealerscore = count(self.tablehand)
+        while dealerscore < 17:
+            hit(self.tabledeck, self.tablehand)
+            print(f"dealer draws {self.tablehand}")  # TODO: print that to chat as well?
+            dealerscore = count(self.tablehand)
+        return dealerscore
 
     def listplayers(self):
         for p in self.Players.keys():
@@ -239,7 +266,8 @@ async def blackjack(ctx, arg=""):
     user_id = ctx.author.id
     if arg == "":
         await ctx.reply(
-            "No argument provided, use `!blackjack create` to create a table")
+            "No argument provided, use `!blackjack create` to create a table, `!blackjack start` to start, `!blackjack hit` and `!blackjack stop` to play")
+        return
     if arg == "create":  # create table
         new_id = len(Tables)
         for table in Tables.values():
@@ -258,18 +286,21 @@ async def blackjack(ctx, arg=""):
     if current_table is None:
         await ctx.reply(f"Player {user_id} not found at any table use `!blackjack create` to create a table")
         return
+    if not current_table.started:
+        if arg == "start":  # tables start method
+            returned = current_table.start()
+            await ctx.send(f"{returned}")
+        else:
+            await ctx.send(f"Game created but not started, use `!blackjack start`")
+    else:
+        if arg == "hit":  # tables hit method
+            returned = current_table.hit(user_id)
+            await ctx.reply(f"{returned}")
 
-    if arg == "start":  # tables hit method
-        returned = current_table.start()
-        await ctx.send(f"{returned}")
-
-    if arg == "hit":  # tables hit method
-        returned = current_table.hit(user_id)
-        await ctx.reply(f"{returned}")
-
-    if arg == "stop":  # tables hit method
-        returned = current_table.stop(user_id)
-        await ctx.send(f"{returned}")
+        if arg == "stop":  # tables stop method
+            returned = current_table.stop(user_id)
+            await ctx.send(f"{returned}")
+            current_table.end()  # quick fix
 
 
 '''

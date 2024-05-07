@@ -12,8 +12,9 @@
 ## Commands:
 **!playblackjack** to log in and start playing <br>
 **!hitd** to draw a card <br>
-**!stopd** to get score
-**!blackjack** to play in a table(not implemented yet)
+**!stopd** to get score <br>
+**!blackjack** to play in a table(BETA, only singleplayer) <br>
+arguments: create, start, hit, stop
 
 
 ### You can now play buckshot-shotgun roulette with the best discord bot out there
