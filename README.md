@@ -4,13 +4,11 @@
 ## Commands:
 **!eco** -displays current money status and updates income<br>
 **!eco addmex** -improves income<br>
-**!eco addarray** -improves income more efficiently<br>
-**!eco addparagon** - improves income A LOT<br>
 **!eco transfer @user** - transfers money to @user <br>
 
 ### You can now play blackjack with the best discord bot out there
 ## Commands:
-**!playblackjack** to log in and start playing <br>
+**!playblackjack** to log in and start playing (will be removed soonTM)<br> 
 **!hitd** to draw a card <br>
 **!stopd** to get score <br>
 **!blackjack** to play in a table(BETA, only singleplayer) <br>
