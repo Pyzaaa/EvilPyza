@@ -126,7 +126,7 @@ class Shotgun:
                 except KeyError:
                     print(f"Tried to give dealer money? {winner} keyerror")
                 self.end(self.id)
-                return f"***gunshot*** \n**{discorduser_mention(target)} is dead, {discorduser_mention(winner)} WINS**, "
+                return f"***gunshot*** \n**{await discorduser_mention(target)} is dead, {await discorduser_mention(winner)} WINS**, "
             if not self.magazine:  # reload magazine on empty
                 loaded = self.load()
                 return f"***gunshot*** \n {loaded} Your turn: {await discorduser_mention(self.turn)}"
