@@ -22,6 +22,7 @@ class User:  # User class for user management
         self.last_income_date = date
         users.update({self.id: self})
         evil_pyza_user_role(userid)
+        logging.info(f"{self.id} created")
 
     def __str__(self):  # for printing user info
         return f"Money: {self.money}\nCurrent income: {self.calculateincome()} \nLast income: {datetime.datetime.fromtimestamp(self.last_income_date).strftime('%Y-%m-%d - %H:%M')}"
@@ -50,10 +51,12 @@ class User:  # User class for user management
         if self.last_income_date + 86400 < date:  # can only be used once /24h
             self.money += self.calculateincome()
             self.last_income_date = date
+            logging.info(f"{self} receives income {self.money}")
             saveusers()  # saves user-state after operation
 
     def transfermoney(self, target, amount):  # transfer money to another user
         if self.money >= amount:
+            logging.info(f"{self} transfers {amount} to {target} ")
             users[target].money += amount
             self.money -= amount
 
@@ -61,6 +64,7 @@ class User:  # User class for user management
         if self.money > 360 and self.mex < 5:
             self.money -= 360
             self.mex += 1
+            logging.info(f"{self} adds mex")
             return f"mex added, currently: {self.mex}/5"
         else:
             if self.mex > 4:
@@ -72,6 +76,7 @@ class User:  # User class for user management
             if self.mex > self.t3mex:
                 self.money -= 4600
                 self.t3mex += 1
+                logging.info(f"{self} upgrades mex")
                 return f"mex upgraded, currently: T3: {self.t3mex}/5\n and {self.mex}/5"
 
         #  TODO: Change that
@@ -105,6 +110,7 @@ async def evil_pyza_user_role(role_user_id):
         member = guild.get_member(role_user_id)
         if member is not None:
             await member.add_roles(role)
+            logging.info(f"Adding {role.name} to {member.display_name} ")
             print(f"Adding {role.name} to {member.display_name} ")
 
 def usermaker(userid, timestamp): # for creating users
@@ -172,7 +178,7 @@ loadusers()
 async def eco(ctx, arg="", user_mention: discord.User = '', amount=0):  # usermention/amount do transferu, poza tym useless
     timestamp = get_command_date(ctx)
     user_id = ctx.author.id
-    await evil_pyza_user_role(user_id)  # temporary placeholder for giving users roles
+    #  await evil_pyza_user_role(user_id)  # temporary placeholder for giving users roles
     if user_id not in users:
         # creates and saves user if no user is found
         returned = usermaker(user_id, timestamp)
@@ -200,23 +206,27 @@ async def eco(ctx, arg="", user_mention: discord.User = '', amount=0):  # userme
         await ctx.reply(returned)
         '''
     elif arg == "transfer":
+        if amount < 1:
+            await ctx.reply(f"XD")
+            return
         if isinstance(user_mention, (discord.User, discord.Member)):  # sprawdź czy pingowany user istnieje
             users[user_id].transfermoney(int(user_mention.id), amount)  # i czy ma konto
             saveusers()  # saves user-state after operation
-            await ctx.send(f"Transfering {amount} to {user_mention.mention}")
+            await ctx.reply(f"Transfering {amount} to {user_mention.mention}")
         elif user_mention.id not in users:
-            await ctx.send(f"User {user_mention} is not created")
+            await ctx.reply(f"User {user_mention} is not created")
         else:
-            await ctx.send(f"User {user_mention} not found\n Correct syntax `!eco transfer @user <amount>`")
+            await ctx.reply(f"User {user_mention} not found\n Correct syntax `!eco transfer @user <amount>`")
     elif arg == "adminset":
         if await UserCheck(ctx):
             if isinstance(user_mention, (discord.User, discord.Member)):  # sprawdź czy pingowany user istnieje
                 users[user_mention.id].money = amount
+                await ctx.reply(f"Setting {amount} as user: {user_mention.mention} money")
                 saveusers()  # saves user-state after operation
             elif user_mention.id not in users:
-                await ctx.send(f"User {user_mention} is not created")
+                await ctx.reply(f"User {user_mention} is not created")
             else:
-                await ctx.send(f"User {user_mention} not found\n Correct syntax `!eco adminset @user <amount>`")
+                await ctx.reply(f"User {user_mention} not found\n Correct syntax `!eco adminset @user <amount>`")
         else:
             return
     elif arg == "help":  # display commands help
