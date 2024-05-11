@@ -63,12 +63,6 @@ standard_deck = {
     'Ace of Spades': 11
 }
 
-
-def surrender():
-    print("Lost")
-    #quit()
-    pass
-
 def count(hand):
     score = 0
     i = 0
@@ -81,20 +75,6 @@ def count(hand):
         i += 1
     return score
 
-def stop(hand):
-    score = count(hand)
-
-    if score == 21:
-        print("**************  Won  **************")
-        score = "**Won**"
-    elif score > 21:
-        print("******************* Lost ***************")
-        score = "**Lost**"
-    else:
-        print(f"****************** {score} ****************")
-    hand = []
-    return hand, score
-
 
 def hit(playing_deck, hand):
     random_card = random.choice(playing_deck)
@@ -106,38 +86,45 @@ def hit(playing_deck, hand):
 
 
 class Player:
-    hand = []
-    playerdeck = list(standard_deck.keys())
-    wins = 0
-    loses = 0
-    score = 0
 
     def __init__(self, id):
         self.id = id
+        self.hand = []
+        self.score = 0
+        self.busted = False
+        self.pool = 0
 
     def __str__(self):
         return f"{self.id}"
 
 
 class Table:
-    tabledeck = list(standard_deck.keys())
-    tablehand = []
-    Players = {}
-    started = False
 
     def __init__(self, id, creator_id):
+        self.tabledeck = list(standard_deck.keys())
+        self.tablehand = []
+        self.Players = {}
+        self.still_playing = []
+        self.turn = 0  # first player to have a turn will be player with index 0 on still_playing list
+        self.started = False
         self.id = id
         self.ownerid = creator_id
-        create_player(creator_id)
         self.Players.update({creator_id: Player(creator_id)})
+
+    def remove(self):
+        Tables.pop(self.id)
 
     def join(self, player):
         if not self.started:
-            playerid = create_player(player)
-            self.Players.update({playerid: Player(playerid)})
-            return playerid
-    #   else:
-    #        return "Game in progress"
+            self.Players.update({player: Player(player)})
+            return player
+        else:
+            return False
+
+    def leave(self, player_id):
+        self.Players.pop(player_id)
+        if not self.Players:
+            self.remove()
 
     def start(self):
         self.started = True
@@ -153,31 +140,39 @@ class Table:
         hit(self.tabledeck, self.tablehand)  # deals 2 cards to dealer and prints one and another as hidden
         hit(self.tabledeck, self.tablehand)
         returned += f"Table hand: {self.tablehand[1]}, *hidden card*"
+        self.still_playing = list(self.Players.keys())  # populate turn tracking list with players that still play
+        self.turn = 0  # set first player to index 0
+        returned += f"\nyour turn: {self.still_playing[self.turn]}"
         return returned
+
+    def next_turn(self):
+        '''
+        # fixme: this will be pain to use here
+        if not self.still_playing:  # if no more players are playing, make dealer play and end game
+            self.dealerturn()
+            return'''
+        if self.turn == len(self.still_playing):
+            self.turn = 0
+        else:
+            self.turn += 1
+            if self.turn == len(self.still_playing):
+                self.turn = 0
 
     def hit(self, player):
         playerscore = count(hit(self.tabledeck, self.Players[player].hand))  # hit zwraca hand'a
+        self.next_turn()
         if playerscore > 21:
+            self.still_playing.remove(player)
+            self.Players[player].busted = True
             return f"{self.Players[player].hand}, score: {playerscore}, **Busted**"
         else:
             return f"{self.Players[player].hand}, score: {playerscore}"
 
     def stop(self, player):
         self.Players[player].score = count(self.Players[player].hand)
-
-        # fixme: this works only for 1 player, need to make queue with checking if player is playing or stopped already
-        dealerscore = self.dealerturn()
-        if self.Players[player].score > 21:  # fixme: this should be checked and ended before
-            return "Already busted"
-        if dealerscore > 21:
-            return "Players win"
-        elif dealerscore < self.Players[player].score:
-            return f"{player} wins"
-        elif dealerscore == self.Players[player].score:
-            return f"tie {dealerscore}"
-        else:
-            return f"{player} Lost: {dealerscore} > {self.Players[player].score}"
-        # return self.Players[player].score
+        self.still_playing.remove(player)
+        self.next_turn()
+        return f"{player} stopped with Hand: {self.Players[player].hand}, {self.Players[player].score}"
 
     def play(self):
         pass
@@ -190,11 +185,25 @@ class Table:
 
     def dealerturn(self):
         dealerscore = count(self.tablehand)
+        dealerreturned = f"Dealer Hand: {self.tablehand}, score: {dealerscore}\n"
+        returned = ""
         while dealerscore < 17:
             hit(self.tabledeck, self.tablehand)
-            print(f"dealer draws {self.tablehand}")  # TODO: print that to chat as well?
+            print(f"dealer draws, current hand: {self.tablehand}")  # done: print that to chat as well?
             dealerscore = count(self.tablehand)
-        return dealerscore
+            dealerreturned += f"dealer draws, current hand: {self.tablehand}, score: {dealerscore}\n"
+            # TODO: When players win add their winning pool to their money
+            if dealerscore > 21:
+                # TODO: mark all players as winning?
+                return f"{dealerreturned}**Busted**, Players win"
+        for player in self.Players:
+            if dealerscore < self.Players[player].score:
+                returned += f"{dealerreturned}{player} wins\n"
+            elif dealerscore == self.Players[player].score:
+                returned += f"{dealerreturned}tie {dealerscore}\n"
+            else:
+                returned += f"{dealerreturned}{player} Lost: {dealerscore} > {self.Players[player].score}\n"
+        return returned
 
     def listplayers(self):
         for p in self.Players.keys():
@@ -202,66 +211,11 @@ class Table:
             return p
 
 
-
-
-
-
-
-
-if __name__ == "__main__":
-    Players = {}
-    id = 6969
-    Players.update({id: Player(id)})
-    print(Players[id])
-
-    hit(Players[id].playerdeck, Players[id].hand)
-
-
-    def Blackjack():
-        hand = []
-        while True:
-            # print(hand)
-            playing_deck = list(standard_deck.keys())
-            whatnow = input("What now? (hit) (stop) (surrender): \n")
-            if whatnow == "hit":
-                hand = hit(playing_deck, hand)
-            elif whatnow == "stop":
-                hand = stop(hand)
-            elif whatnow == "surrender":
-                surrender()
-                hand = []
-
-
-    Blackjack()
-
 Tables = {}
-Players = {}
-
-
-def create_player(id):
-    Players.update({id: Player(id)})
-    Players[id].hand.clear()
-    Players[id].playerdeck = list(standard_deck.keys())
-    print(f"{Players[id]} joined game")
-    return Players[id]
 
 
 @bot.command()
-async def playblackjack(ctx):
-    if ctx.channel.id in (KASYNO, CHANNEL_ID):
-        user_id = ctx.author.id
-        returned = create_player(user_id)
-        hand = Players[user_id].hand
-        hit(Players[user_id].playerdeck, Players[user_id].hand)
-        hit(Players[user_id].playerdeck, Players[user_id].hand)
-
-        await ctx.reply(f"Created player:{returned}, use hitd, stopd to play, your hand: {hand}")
-    else:
-        await ctx.reply("idź na #kasyno-evilpyzy")
-
-
-@bot.command()
-async def blackjack(ctx, arg=""):
+async def blackjack(ctx, arg="", arg2=""):
     current_table: Table = None
     user_id = ctx.author.id
     if arg == "":
@@ -269,122 +223,72 @@ async def blackjack(ctx, arg=""):
             "No argument provided, use `!blackjack create` to create a table, `!blackjack start` to start, `!blackjack hit` and `!blackjack stop` to play")
         return
     if arg == "create":  # create table
-        new_id = len(Tables)
         for table in Tables.values():
             if user_id in table.Players:
                 await ctx.reply(f"Already playing at table: {table.id} with owner: {table.ownerid}")
                 return
+        new_id = len(Tables)
         Tables.update({new_id: Table(new_id, user_id)})
-        returned = create_player(user_id)
-        await ctx.reply(f"Created new table {new_id} with owner :{returned}")
+        await ctx.reply(f"Created new table {new_id} with owner: {user_id}")
         return
-
+    if arg == "join":
+        for table in Tables.values():
+            if user_id in table.Players:
+                await ctx.reply(f"Already playing at table: {table.id} with owner: {table.ownerid}")
+                return
+        table_id = int(arg2)
+        returned = Tables[table_id].join(user_id)
+        if returned:
+            await ctx.reply(f"joined table {table_id} as {returned} with owner: {Tables[table_id].ownerid}")
+            return
+        else:
+            await ctx.reply(f"Game has already started")
+            return
     for table in Tables.values():
         if user_id in table.Players:
             current_table = table
             break
     if current_table is None:
-        await ctx.reply(f"Player {user_id} not found at any table use `!blackjack create` to create a table")
+        await ctx.reply(f"Player {user_id} not found at any table use `!blackjack create` to create a table or `!blackjack join <table ID>` to join a game")
+        return
+    if arg == "leave":
+        if current_table.started:
+            await ctx.reply(f"***Leaving started table will cause errors, disabled for now***")
+            return
+        current_table.leave(user_id)
+        await ctx.reply(f"You left the table: Table {current_table.id}")
         return
     if not current_table.started:
         if arg == "start":  # tables start method
+            if user_id != current_table.ownerid:
+                await ctx.reply(f"Only table owner can start the table, owner: {current_table.ownerid}")
+                return
             returned = current_table.start()
             await ctx.send(f"{returned}")
         else:
-            await ctx.send(f"Game created but not started, use `!blackjack start`")
+            await ctx.reply(f"Game created but not started, use `!blackjack start`")
     else:
-        if arg == "hit":  # tables hit method
-            returned = current_table.hit(user_id)
-            await ctx.reply(f"{returned}")
+        if current_table.still_playing:
+            if current_table.still_playing[current_table.turn] == user_id:
+                # TODO: turn checking here
+                if arg == "hit":  # tables hit method
+                    returned = current_table.hit(user_id)
+                    await ctx.reply(f"{returned}")
 
-        if arg == "stop":  # tables stop method
-            returned = current_table.stop(user_id)
-            await ctx.send(f"{returned}")
-            current_table.end()  # quick fix
+                if arg == "stop":  # tables stop method
+                    returned = current_table.stop(user_id)
+                    await ctx.send(f"{returned}")
+                    #current_table.end()  # fixme: quick fix
+                if current_table.still_playing:  # if there's a player playing return his turn
+                    await ctx.send(f" Your Turn: {current_table.still_playing[current_table.turn]}")
+                else:  # if no more players are playing, make dealer play and end game
+                    returned = current_table.dealerturn()
+                    current_table.end()
+                    await ctx.send(f"{returned}")
+                # TODO: dealerturn() here?
+                # TODO: end here?
+            else:
+                await ctx.reply(f"not your turn, current turn {current_table.still_playing[current_table.turn]}")
 
-
-'''
-
-@bot.command()
-async def join_table(ctx, *, arg):
-    user_id = ctx.author.id
-    arg = int(arg)
-    returned = Tables[arg].join(user_id)
-    await ctx.reply(f"joined table {arg} as {returned} with owner: {Tables[arg].ownerid}")
-
-
-
-@bot.command()
-async def start_table(ctx, *, arg):
-    user_id = ctx.author.id
-    arg = int(arg)
-    Tables[arg].start()
-    await ctx.reply(f"table {arg} starting")
-
-@bot.command()
-async def listplayers(ctx, *, arg):
-    arg = int(arg)
-    returned = Tables[arg].listplayers()
-
-    # user = await bot.fetch_user(returned) # Generalnie to to powinno zwrócić usera
-    # user.mention  # a to powinno spingować tego usera, tak samo jak pinguje !Farmazon, ale nie działa XD
-
-    await ctx.reply(f"table {arg} has {returned}")
-
-
-@bot.command()
-async def surrenderd(ctx):
-    user_id = ctx.author.id
-    try:
-        Players[user_id].hand.clear()
-        Players[user_id].playerdeck = list(standard_deck.keys())
-    except KeyError:
-        await ctx.reply(f"player {user_id} doesn't exist")
-'''
-
-@bot.command()
-async def stopd(ctx):
-    if ctx.channel.id in (KASYNO, CHANNEL_ID):
-        user_id = ctx.author.id
-        try:
-            Players[user_id].hand, returned = stop(Players[user_id].hand)
-            Players[user_id].playerdeck = list(standard_deck.keys())
-        except KeyError:
-            await ctx.reply(f"player {user_id} doesn't exist")
         else:
-            await ctx.reply(f"{returned}")
-            hit(Players[user_id].playerdeck, Players[user_id].hand)
-            hit(Players[user_id].playerdeck, Players[user_id].hand)
-
-            hand = Players[user_id].hand
-            await ctx.reply(f"Play again?, use hitd, stopd to play, your hand: {hand}")
-    else:
-        await ctx.reply("idź na #kasyno-evilpyzy")
-
-@bot.command()
-async def hitd(ctx):
-    if ctx.channel.id in (KASYNO, CHANNEL_ID):
-        user_id = ctx.author.id
-        try:
-            returned = hit(Players[user_id].playerdeck, Players[user_id].hand)
-        except KeyError:
-            await ctx.reply(f"player {user_id} doesn't exist")
-        else:
-            await ctx.reply(f"{returned}")
-    else:
-        await ctx.reply("idź na #kasyno-evilpyzy")
-
-'''
-@bot.command()
-async def tablestop(ctx, *, arg):
-    user_id = ctx.author.id
-    arg = int(arg)
-    await ctx.reply(f"{Tables[arg].stop(user_id)}")
-
-
-@bot.command()
-async def tablehit(ctx, *, arg):
-    user_id = ctx.author.id
-    arg = int(arg)
-    await ctx.reply(f"{Tables[arg].hit(user_id)}")
-'''
+            await ctx.reply(f"no players are playing anymore")
