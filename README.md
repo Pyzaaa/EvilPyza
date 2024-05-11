@@ -8,11 +8,14 @@
 
 ### You can now play blackjack with the best discord bot out there
 ## Commands:
-**!playblackjack** to log in and start playing (will be removed soonTM)<br> 
-**!hitd** to draw a card <br>
-**!stopd** to get score <br>
-**!blackjack** to play in a table(BETA, only singleplayer) <br>
-arguments: create, start, hit, stop
+**!blackjack** to play in a table <br>
+**!blackjack create** to create a new table <br>
+**!blackjack start** to start the table game <br>
+**!blackjack hit** to hit (draw another card) <br>
+**!blackjack stop** to stop drawing cards <br>
+**!blackjack join <table ID>** to join a table with given ID <br>
+**!blackjack leave** to leave your current table <br>
+*if players leave after game was started there will be errors*
 
 
 ### You can now play buckshot-shotgun roulette with the best discord bot out there
@@ -26,8 +29,7 @@ arguments: create, start, hit, stop
 **!bet shotgun [amount]** - to bet (only in PvE currently)
 
 # TODO
-- dealer (blackjack) (in progress)
-- table (blackjack) (in progress)
+- Fix blackjack leaving breaking the game
 - ~~fix code~~
 - card images
 - add economy to Blackjack
