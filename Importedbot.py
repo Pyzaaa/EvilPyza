@@ -12,3 +12,9 @@ intents.guilds = True
 intents.messages = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+
+# Function to split long messages into chunks
+def split_message(message):
+    chunks = [message[i:i + 2000] for i in range(0, len(message), 2000)]
+    return chunks

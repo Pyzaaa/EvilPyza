@@ -63,6 +63,7 @@ standard_deck = {
     'Ace of Spades': 11
 }
 
+
 def count(hand):
     score = 0
     i = 0

@@ -25,7 +25,7 @@ class User:  # User class for user management
         logging.info(f"{self.id} created")
 
     def __str__(self):  # for printing user info
-        return f"Money: {self.money}\nCurrent income: {self.calculateincome()} \nLast income: {datetime.datetime.fromtimestamp(self.last_income_date).strftime('%Y-%m-%d - %H:%M')}"
+        return f"Money: {self.money}\nCurrent income: {self.calculateincome()} \nLast income: {datetime.datetime.fromtimestamp(self.last_income_date+7200).strftime('%Y-%m-%d - %H:%M')}"
 
     def takemoney(self, amount):
         if self.money >= amount:
