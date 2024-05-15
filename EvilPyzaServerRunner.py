@@ -41,12 +41,18 @@ item_prices = {
     "dark_oak_log": 5,
     "cherry_log": 8,
     "cobblestone": 1,
+    "dirt": 2,
+    "sand": 2,
+    "clay": 8,
+    "grass_block": 6,
     "coal": 6,
+    "quartz": 15,
     "iron_ingot": 20,
     "redstone": 10,
     "gold_ingot": 30,
     "lapis_lazuli": 20,
     "diamond": 100,
+    "emerald": 50,
     "stone_bricks": 5,
     "glass_block": 5,
     "obsidian": 50,
@@ -64,7 +70,11 @@ item_prices = {
     "diamond_chestplate": 600,
     "diamond_leggings": 500,
     "diamond_boots": 250,
+    "white_wool": 10,
+    "leather": 12,
+    "gunpowder": 20,
     "bread": 3,
+    "apple": 20,
     "cooked_steak": 6,
     "golden_apple": 500,
     "painting": 10
@@ -77,13 +87,17 @@ async def season3(ctx, command="", arg2=None, arg3=1):
     if command == "":
         await ctx.reply("No argument provided, use `!season3 register <minecraft nickname>` to register playername or `!season3 buy <item_id> [amount=1]` to buy items")
         return
-    if command == "register" and arg2:
-        if not (user_id in Playerlist or arg2 in Playerlist.values()):
-            await eco(ctx, "add")
-            Playerlist.update({user_id: arg2})
-            saveplayers()
-            await ctx.reply(f"Registered player {await discorduser_mention(user_id)} as {arg2}")
-            return
+    if command == "register":
+        if not user_id in Playerlist:
+            if not arg2:
+                await ctx.reply(f"No minecraft player name provided")
+                return
+            if arg2 in Playerlist.values():
+                await eco(ctx, "add")
+                Playerlist.update({user_id: arg2})
+                saveplayers()
+                await ctx.reply(f"Registered player {await discorduser_mention(user_id)} as {arg2}")
+                return
         else:
             await ctx.reply(f"Player {await discorduser_mention(user_id)} already registered as {Playerlist[user_id]}, use `!season3 unregister` to remove")
             return
@@ -94,8 +108,27 @@ async def season3(ctx, command="", arg2=None, arg3=1):
             await ctx.reply(f"Player {await discorduser_mention(user_id)}: {removed} unregistered")
             return
         else:
-            await ctx.reply("Player not found")
+            await ctx.reply("Player not found in registered players list")
             return
+    elif command == "price":
+        if arg2 in item_prices.keys():
+            # return item price instead of whole list
+            await ctx.reply(f"{arg2} costs: {item_prices[arg2]}/per item")
+            return
+
+        shop = "***EvilPyza item shop:***\n"
+        for item, price in item_prices.items():
+            shop += f"**{item}**: price **{price}**/per item\n"
+        shop += f"**emerald**: sell value **1**/per item\n"
+        # Split response into chunks if it's too long
+        response_chunks = split_message(shop)
+        # Send each chunk separately
+        for chunk in response_chunks:
+            await ctx.send(chunk)
+        return
+    if command not in ["buy", "sell"]:
+        ctx.reply(f"Unknown command {command}")
+        return
     elif user_id in Playerlist:
         player_name = Playerlist[user_id]
         if isinstance(arg3, str) or arg3 < 1:

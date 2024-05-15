@@ -32,6 +32,7 @@
 ## Commands:
 **!season3 register <minecraft player name>** - to register for minecraft server economy
 **!season3 unregister** - to remove yourself from minecraft server economy
+**!season3 price [minecraft item ID]** - to display item price or print entire shop
 **!season3 buy <minecraft item ID> [amount=1]** - to buy items in-game for discord eco
 **!season3 sell <minecraft item ID> [amount=1]** - to sell emeralds for 1 eco each
 
