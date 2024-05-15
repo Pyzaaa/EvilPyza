@@ -116,7 +116,7 @@ async def evil_pyza_user_role(role_user_id):
 def usermaker(userid, timestamp): # for creating users
     if userid in users:
         logging.info(f'User {userid} already exists')
-        return "user already exists"
+        return "Eco user already exists"
     else:
         User(userid, timestamp)
         logging.info(f'Users created {userid}')

@@ -28,6 +28,13 @@
 **!playshotgun opponent** - to shoot opponent<br>
 **!bet shotgun [amount]** - to bet (only in PvE currently)
 
+### EvilPyza Bot has been integrated with EvilPyza Radmin Season3 minecraft server
+## Commands:
+**!season3 register <minecraft player name>** - to register for minecraft server economy
+**!season3 unregister** - to remove yourself from minecraft server economy
+**!season3 buy <minecraft item ID> [amount=1]** - to buy items in-game for discord eco
+**!season3 sell <minecraft item ID> [amount=1]** - to sell emeralds for 1 eco each
+
 # TODO
 - Fix blackjack leaving breaking the game
 - ~~fix code~~
