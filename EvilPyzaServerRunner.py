@@ -12,11 +12,16 @@ import pickle
 rcon_host = 'localhost'
 rcon_port = 25577
 mcr = MCRcon(rcon_host, rcon_password, port=rcon_port)
-mcr.connect()
+try:
+    mcr.connect()
+except Exception as e:
+    print(f"mcr failed to connect {e}")
 
 Playerlist = {}
 
 FILE_PATH = "data/minecraftplayerslist.pkl"
+
+
 def saveplayers():
     with open(FILE_PATH, 'wb') as f:
         pickle.dump(Playerlist, f)
@@ -29,6 +34,7 @@ def loadplayers():
             Playerlist = pickle.load(f)
     except EOFError:
         print("EOF Error")
+
 
 loadplayers()
 
@@ -83,6 +89,19 @@ item_prices = {
 
 @bot.command()
 async def season3(ctx, command="", arg2=None, arg3=1):
+    try:
+        mcr.command("/tick query")
+        print("mcr connected")
+    except Exception as e:
+        print(f"mcr not connected {e}")
+        await ctx.reply("Connection error, attempting reconnect...")
+        try:
+            mcr.connect()
+        except Exception as e:
+            print(f"mcr failed to connect {e}")
+            await ctx.send("Connection error, server offline??")
+            return
+        return
     user_id = ctx.author.id
     if command == "":
         await ctx.reply("No argument provided, use `!season3 register <minecraft nickname>` to register playername or `!season3 buy <item_id> [amount=1]` to buy items")
@@ -111,7 +130,7 @@ async def season3(ctx, command="", arg2=None, arg3=1):
             await ctx.reply("Player not found in registered players list")
             return
     elif command == "price":
-        if arg2 in item_prices.keys():
+        if arg2 and arg2 in item_prices.keys():
             # return item price instead of whole list
             await ctx.reply(f"{arg2} costs: {item_prices[arg2]}/per item")
             return
