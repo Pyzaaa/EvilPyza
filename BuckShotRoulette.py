@@ -235,6 +235,9 @@ async def playshotgun(ctx, arg="", user_mention: discord.User = 69):  # if no us
             pass
         session = getsession(user_id)  # moved to function
             # creategame else should be here?
+        if not session:
+            await ctx.reply(f"No session found")
+            return
         if session.in_use:  # might get referenced before assignment ??? checks if session has been started
             if session.turn == user_id:  # checks if player has the turn
                 if arg == "self":
