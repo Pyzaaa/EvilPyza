@@ -123,11 +123,11 @@ potion_effects = {
 "invisibility": 200
 }
 
-
+############## /commands don't work on bukkit cause why not LMAO
 @bot.command()
 async def season3(ctx, command="", arg2=None, arg3=1):
     try:
-        mcr.command("/tick query")
+        mcr.command("tick query")
         print("mcr connected")
     except Exception as e:
         print(f"mcr not connected {e}")
@@ -213,7 +213,7 @@ async def season3(ctx, command="", arg2=None, arg3=1):
                         return
                     else:
                         item_id = f"minecraft:{arg2}"
-                        command = f"/give {player_name} {item_id} {arg3}"
+                        command = f"give {player_name} {item_id} {arg3}"
                         response = mcr.command(command)
                         await ctx.reply(response)
                         return
@@ -225,7 +225,7 @@ async def season3(ctx, command="", arg2=None, arg3=1):
                         return
                     else:
                         item_id = f"minecraft:potion[potion_contents={{potion:'minecraft:{arg2}'}}]"
-                        command = f"/give {player_name} {item_id} {arg3}"
+                        command = f"give {player_name} {item_id} {arg3}"
                         response = mcr.command(command)
                         await ctx.reply(response)
                         return
@@ -236,7 +236,7 @@ async def season3(ctx, command="", arg2=None, arg3=1):
                 if arg2 in sell_prices:
                     items = itemcount(player_name, arg2)
                     if items >= arg3:
-                        command = f"/clear {player_name} {arg2} {arg3}"
+                        command = f"clear {player_name} minecraft:{arg2} {arg3}"
                         response = mcr.command(command)
                         users[user_id].givemoney(sell_prices[arg2]*arg3)
                         await ctx.reply(f"{arg3} items sold, {response}")
@@ -285,7 +285,7 @@ async def seeinventory(ctx, *, nickname):
 def inventorycheck(nickname):
     try:
         # Execute the data command to list player's inventory
-        command = f"/data get entity {nickname} Inventory"
+        command = f"data get entity {nickname} Inventory"
         response = mcr.command(command)
 
         # Print the response (inventory contents)
