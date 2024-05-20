@@ -34,13 +34,14 @@
 **!season3 unregister** - to remove yourself from minecraft server economy
 **!season3 price [minecraft item ID]** - to display item price or print entire shop
 **!season3 buy <minecraft item ID> [amount=1]** - to buy items in-game for discord eco
-**!season3 sell <minecraft item ID> [amount=1]** - to sell emeralds for 1 eco each
+**!season3 sell <minecraft item ID> [amount=1]** - to sell items for eco
 
 # TODO
 - Fix blackjack leaving breaking the game
+- Buckshot roulette PVP betting
+- standardize betting commands
 - ~~fix code~~
-- card images
+- card images for Blackjack
 - add economy to Blackjack
-- economy shows 2h behind
 - economy better saving?
 
