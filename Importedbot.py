@@ -16,8 +16,32 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Function to split long messages into chunks
 def split_message(message):
-    chunks = [message[i:i + 2000] for i in range(0, len(message), 2000)]
+    # Split the message by newline characters
+    lines = message.split('\n')
+
+    # Initialize variables to store the current chunk and the result
+    current_chunk = ''
+    chunks = []
+
+    for line in lines:
+        # Check if adding this line would exceed the limit
+        if len(current_chunk) + len(line) + 1 > 2000:  # +1 for the newline character
+            # If it would, append the current chunk to the result and start a new chunk
+            chunks.append(current_chunk)
+            current_chunk = line
+        else:
+            # If not, add the line to the current chunk
+            if current_chunk:
+                current_chunk += '\n' + line
+            else:
+                current_chunk = line
+
+    # Add the last chunk to the result
+    if current_chunk:
+        chunks.append(current_chunk)
+
     return chunks
+
 
 async def discorduser_mention(fetched_id):  # cleans up code from mentions and translates ID numbers into mentions
     try:

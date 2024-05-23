@@ -96,6 +96,7 @@ item_prices = {
     "apple": 20,
     "cooked_steak": 6,
     "golden_apple": 500,
+    "totem_of_undying": 400,
     "candle": 5,
     "painting": 10
 }
@@ -103,24 +104,29 @@ sell_prices = {
     "obsidian": 1,
     "emerald": 5,
     "diamond": 15,
-    "netherite_ingot": 100,
-    "nether_star": 120,
+    "netherite_ingot": 150,
+    "nether_star": 180,
     "beacon": 130,
-    "creeper_head": 50,
-    "zombie_head": 30,
-    "skeleton_skull": 30,
-    "wither_skeleton_skull": 30,
+    "creeper_head": 60,
+    "zombie_head": 50,
+    "skeleton_skull": 50,
+    "wither_skeleton_skull": 50,
     "dragon_head": 10,
     "elytra": 100,
-    "netherite_upgrade_smithing_template": 20,
+    "netherite_upgrade_smithing_template": 150,
     "golden_apple": 30,
-    "enchanted_golden_apple": 300
+    "enchanted_golden_apple": 300,
+    "totem_of_undying": 20
 }
 
 potion_effects = {
 "fire_resistance": 200,
 "strength": 200,
-"invisibility": 200
+"invisibility": 200,
+"night_vision": 200,
+"slow_falling": 200,
+"water_breathing": 200,
+"speed": 200
 }
 
 ############## /commands don't work on bukkit cause why not LMAO
@@ -177,6 +183,9 @@ async def season3(ctx, command="", arg2=None, arg3=1):
         if arg2 and arg2 in item_prices.keys():
             # return item price instead of whole list
             returned = f"{arg2} costs: {item_prices[arg2]}/per item\n"
+        if arg2 and arg2 in potion_effects.keys():
+            # return item price instead of whole list
+            returned = f"{arg2} costs: {item_prices[arg2]}/per item\n"
         if arg2 and arg2 in sell_prices.keys():
             returned += f"{arg2} sells for: {sell_prices[arg2]}/per item"
             await ctx.reply(returned)
@@ -187,6 +196,9 @@ async def season3(ctx, command="", arg2=None, arg3=1):
         shop = "***EvilPyza item shop:***\n"
         for item, price in item_prices.items():
             shop += f"**{item}**: price **{price}**/per item\n"
+        shop += "***Potion Prices:***\n"
+        for item, price in potion_effects.items():
+            shop += f"**{item}**: price **{price}**/per item\n"
         shop += "\n ***SELL PRICES***:"
         for item, price in sell_prices.items():
             shop += f"**{item}**: sell value **{price}**/per item\n"
@@ -196,7 +208,7 @@ async def season3(ctx, command="", arg2=None, arg3=1):
         for chunk in response_chunks:
             await ctx.send(chunk)
         return
-    if command not in ["buy", "sell"]:
+    if command not in ["buy", "sell", "lock"]:
         await ctx.reply(f"Unknown command {command}")
         return
     elif user_id in Playerlist:
@@ -232,7 +244,7 @@ async def season3(ctx, command="", arg2=None, arg3=1):
                 else:
                     await ctx.reply("Item not available")
                     return
-            if command == "sell":
+            elif command == "sell":
                 if arg2 in sell_prices:
                     items = itemcount(player_name, arg2)
                     if items >= arg3:
@@ -248,6 +260,21 @@ async def season3(ctx, command="", arg2=None, arg3=1):
                     await ctx.reply(f"Can't sell this item")
                     return
                 return
+            elif command == "lock":
+                if arg2:
+                    price = 20
+                    amount = users[user_id].takemoney(int(price))
+                    if not amount:
+                        ctx.reply(f"Not enough money, price: {price}")
+                        return
+                    else:
+                        command = f"give {player_name} chest[minecraft:lock='{arg2}']"
+                        response = mcr.command(command)
+                        await ctx.reply(f"{response} locked with item name: {arg2}")
+                        return
+                else:
+                    ctx.reply(f"No Key lock argument provided")
+                    return
         else:
             await ctx.reply(f"Player must be online on the server, {player_name} not found")
             return
