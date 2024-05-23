@@ -3,6 +3,9 @@
 
 import discord
 from discord.ext import commands
+import logging
+from logging.handlers import TimedRotatingFileHandler
+import os
 
 
 intents = discord.Intents.default()
@@ -49,3 +52,56 @@ async def discorduser_mention(fetched_id):  # cleans up code from mentions and t
         return discorduser.mention
     except discord.errors.NotFound as e:
         print(f"User to fetch not found, Error: {e}")
+
+
+
+# basic Logging
+
+class ExcludeKeywordsFilter(logging.Filter):
+    def __init__(self, keywords):
+        super().__init__()
+        self.keywords = keywords
+
+    def filter(self, record):
+        return not any(keyword in record.getMessage() for keyword in self.keywords)
+
+# Create a logs directory if it doesn't exist
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+# Create a TimedRotatingFileHandler
+handler = TimedRotatingFileHandler(
+    filename='logs/discord_bot.log',  # Base filename
+    when='midnight',  # Rotate at midnight
+    interval=1,  # Rotate every day
+    backupCount=0  # Keep 30 days of logs
+)
+handler.suffix = "%Y-%m-%d"  # Date format for rotated files
+
+# Set the logging format
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# Create a logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)  # Set logging level
+
+# Add the handler to the logger
+logger.addHandler(handler)
+
+# Define the keywords you want to exclude from logging
+keywords_to_exclude = [
+    'Got a request to RESUME the websocket',
+    'Shard ID None has sent the RESUME payload',
+    'Shard ID'
+]
+
+# Create the filter
+exclude_filter = ExcludeKeywordsFilter(keywords_to_exclude)
+
+# Add the filter to the handler
+handler.addFilter(exclude_filter)
+
+# Test the logging setup
+logger.info('This is a test message.')
+logger.info('Got a request to RESUME the websocket')  # This should be excluded

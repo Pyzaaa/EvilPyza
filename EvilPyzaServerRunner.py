@@ -2,7 +2,7 @@ import random
 import discord
 from EvilPyzaValidate import UserCheck
 import subprocess
-from Importedbot import bot, split_message, discorduser_mention
+from Importedbot import bot, split_message, discorduser_mention, logging
 from EvilPyzaValidate import rcon_password  # Security
 from mcrcon import MCRcon
 from Economy import users, eco
@@ -25,6 +25,7 @@ FILE_PATH = "data/minecraftplayerslist.pkl"
 def saveplayers():
     with open(FILE_PATH, 'wb') as f:
         pickle.dump(Playerlist, f)
+        logging.info(f'Minecraft players data saved')
 
 
 def loadplayers():
@@ -32,8 +33,10 @@ def loadplayers():
         with open(FILE_PATH, 'rb') as f:
             global Playerlist
             Playerlist = pickle.load(f)
+            logging.info(f'Minecraft players data loaded successfully, {len(Playerlist)} loaded.')
     except EOFError:
         print("EOF Error")
+        logging.warning(f'EOF ERROR while loading player data')
 
 
 loadplayers()
@@ -159,6 +162,7 @@ async def season3(ctx, command="", arg2=None, arg3=1):
                 Playerlist.update({user_id: arg2})
                 saveplayers()
                 await ctx.reply(f"Registered player {await discorduser_mention(user_id)} as {arg2}")
+                logging.info(f"Registered player {await discorduser_mention(user_id)} as {arg2}")
                 return
             elif arg2 in Playerlist.values():
                 await ctx.reply(f"Player nickname {arg2} already registered")
@@ -174,6 +178,7 @@ async def season3(ctx, command="", arg2=None, arg3=1):
             removed = Playerlist.pop(user_id)
             saveplayers()
             await ctx.reply(f"Player {await discorduser_mention(user_id)}: {removed} unregistered")
+            logging.info(f"Player {await discorduser_mention(user_id)}: {removed} unregistered")
             return
         else:
             await ctx.reply("Player not found in registered players list")
@@ -286,11 +291,13 @@ async def season3(ctx, command="", arg2=None, arg3=1):
 
 @bot.command()
 async def season3command(ctx, *, command):
+    logging.info(f"User {ctx.author} attempted to use: {command}")
     if await UserCheck(ctx):
         async with ctx.typing():
             # Connect to Minecraft server using RCON
             # Send command to Minecraft server
             response = mcr.command(command)
+            logging.info(f"{command} execution result: {response}")
 
             # Split response into chunks if it's too long
             response_chunks = split_message(response)
