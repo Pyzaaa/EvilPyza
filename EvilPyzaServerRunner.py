@@ -41,6 +41,31 @@ def loadplayers():
 
 loadplayers()
 
+sold_stats = {}
+STATS_PATH = "data/minecraft_sold_stats.pkl"
+
+
+def savestats():
+    with open(STATS_PATH, 'wb') as f:
+        pickle.dump(sold_stats, f)
+        logging.info(f'Minecraft sell data saved')
+
+
+def loadstats():
+    try:
+        with open(STATS_PATH, 'rb') as f:
+            global sold_stats
+            sold_stats = pickle.load(f)
+            logging.info(f'Minecraft sell data loaded successfully, {len(sold_stats)} loaded.')
+    except EOFError:
+        print("EOF Error")
+        logging.warning(f'EOF ERROR while loading sell data')
+
+
+loadplayers()
+loadstats()
+
+scoreboards = ["KillCount", "Wyjebki"]
 item_prices = {
     "oak_log": 3,
     "spruce_log": 3,
@@ -74,7 +99,7 @@ item_prices = {
     "diamond": 100,
     "emerald": 50,
     "stone_bricks": 5,
-    "glass_block": 5,
+    "glass": 5,
     "obsidian": 50,
     "glowstone": 15,
     "iron_sword": 25,
@@ -134,7 +159,7 @@ potion_effects = {
 
 ############## /commands don't work on bukkit cause why not LMAO
 @bot.command()
-async def season3(ctx, command="", arg2=None, arg3=1):
+async def season3(ctx, command="", arg2=None, arg3=''):
     try:
         mcr.command("tick query")
         print("mcr connected")
@@ -151,6 +176,35 @@ async def season3(ctx, command="", arg2=None, arg3=1):
     user_id = ctx.author.id
     if command == "":
         await ctx.reply("No argument provided, use `!season3 register <minecraft nickname>` to register playername or `!season3 buy <item_id> [amount=1]` to buy items")
+        return
+    if command == "switch":
+        switch_scoreboard()
+        await ctx.send("Scoreboard switched")
+        return
+    if command == "team":
+        if not arg2:
+            await ctx.reply(f"Minecraft team management, use `team add, join, leave` to manage teams, for team color change @Pyzu cause he's too lazy to code it in")
+        if arg2 == "add":
+            if arg3 and not '':
+                await ctx.reply(f"Creating team with name {arg3}")
+                mcr.command(f"team add {arg3}")
+            else:
+                await ctx.reply(f"No team name found: {arg3}")
+        if arg2 == "join":
+            if is_player_online(Playerlist[user_id]):
+                if arg3 and not '':
+                    await ctx.reply(f"Joining team {arg3}")
+                    mcr.command(f"team join {arg3} {Playerlist[user_id]}")
+                else:
+                    await ctx.reply(f"No team name found: {arg3}")
+            else:
+                await ctx.reply(f"Player not found online on the server")
+        if arg2 == "leave":
+            if is_player_online(Playerlist[user_id]):
+                await ctx.reply(f"Leaving team")
+                mcr.command(f"team leave {Playerlist[user_id]}")
+            else:
+                await ctx.reply(f"Player not found online on the server")
         return
     if command == "register":
         if user_id not in Playerlist:
@@ -218,7 +272,11 @@ async def season3(ctx, command="", arg2=None, arg3=1):
         return
     elif user_id in Playerlist:
         player_name = Playerlist[user_id]
-        if isinstance(arg3, str) or arg3 < 1:
+        try:
+            arg3 = int(arg3)
+        except:
+            arg3 = 1
+        if arg3 < 1:
             arg3 = 1
         if is_player_online(player_name):
             if command == "buy":
@@ -257,6 +315,12 @@ async def season3(ctx, command="", arg2=None, arg3=1):
                         response = mcr.command(command)
                         users[user_id].givemoney(sell_prices[arg2]*arg3)
                         await ctx.reply(f"{arg3} items sold, {response}")
+                        if arg2 not in sold_stats:
+                            sold_stats[arg2] = arg3
+                            savestats()
+                        else:
+                            sold_stats[arg2] += arg3
+                            savestats()
                         return
                     else:
                         await ctx.reply(f"not enough items in player inventory {items}/{arg3}")
@@ -296,6 +360,7 @@ async def season3command(ctx, *, command):
         async with ctx.typing():
             # Connect to Minecraft server using RCON
             # Send command to Minecraft server
+            response = "Response: \n"
             response = mcr.command(command)
             logging.info(f"{command} execution result: {response}")
 
@@ -304,6 +369,7 @@ async def season3command(ctx, *, command):
 
             # Send each chunk separately
             for chunk in response_chunks:
+                #print (f"Printing chunk: {chunk}")
                 await ctx.send(chunk)
 
 
@@ -351,3 +417,10 @@ def is_player_online(player):
         return True
     else:
         return False
+
+
+def switch_scoreboard():
+    popped = scoreboards.pop(0)
+    scoreboards.append(popped)
+    mcr.command(f'scoreboard objectives setdisplay sidebar {popped}')
+    print(f"switched scoreboard to {popped}")

@@ -26,7 +26,7 @@ class User:  # User class for user management
         return f"Money: {self.money}\nCurrent income: {self.calculateincome()} \nLast income: {datetime.datetime.fromtimestamp(self.last_income_date+7200).strftime('%Y-%m-%d - %H:%M')}"
 
     def takemoney(self, amount):
-        logging.info(f"{self} attempted to take {amount} from {self.money}")
+        logging.info(f"{self.id} attempted to take {amount}")
         if self.money >= amount:
             self.money -= amount
             saveusers()  # saves user-state after operation
@@ -35,7 +35,7 @@ class User:  # User class for user management
             return False
 
     def givemoney(self, amount):
-        logging.info(f"{self}, money: {self.money}, received {amount}")
+        logging.info(f"{self.id}, received {amount}")
         self.money += amount
         saveusers()  # saves user-state after operation
         pass
@@ -51,7 +51,7 @@ class User:  # User class for user management
         if self.last_income_date + 86400 < date:  # can only be used once /24h
             self.money += self.calculateincome()
             self.last_income_date = date
-            logging.info(f"{self} receives income")
+            logging.info(f"{self.id} receives income")
             saveusers()  # saves user-state after operation
 
     def transfermoney(self, target, amount):  # transfer money to another user
@@ -223,6 +223,11 @@ async def eco(ctx, arg="", user_mention: discord.User = '', amount=0):  # userme
                 users[user_mention.id].money = amount
                 await ctx.reply(f"Setting {amount} as user: {user_mention.mention} money")
                 saveusers()  # saves user-state after operation
+            elif user_mention in users:
+                await ctx.reply(f"User {user_mention} found as an ID in database, proceeding")
+                users[user_mention].money = amount
+                await ctx.reply(f"Setting {amount} as user: {user_mention} money")
+                saveusers()  # saves user-state after operation
             elif user_mention.id not in users:
                 await ctx.reply(f"User {user_mention} is not created")
             else:
@@ -237,6 +242,23 @@ async def eco(ctx, arg="", user_mention: discord.User = '', amount=0):  # userme
         returned = user_info(user_id, timestamp)
         await ctx.reply(returned)
 
+
+@bot.command(help="Komunizm")
+async def komunizm(ctx):
+    user_id = ctx.author.id
+    if await UserCheck(ctx):
+        u: user
+        summed = 0
+        for u in users.values():
+            summed += u.money
+        if users[user_id].money >= summed / 2:
+            result = summed // len(users.values())
+            for u in users.values():
+                u.money = int(result * 0.8)
+            saveusers()
+            await ctx.reply(f"everyone is equal now: {result}")
+        else:
+            await ctx.reply(f"must have at least 50% of all money: {summed}")
 
 '''
  #for testing purposes only

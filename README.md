@@ -28,6 +28,14 @@
 **!playshotgun opponent** - to shoot opponent<br>
 **!bet shotgun [amount]** - to bet (only in PvE currently)
 
+### EvilPyza "Zdrapki"
+## Commands:
+**!zdrapki** to start playing and receive help <br>
+**!zdrapki help** - to get a help message<br>
+**!zdrapki play [cost- default 10] [game-type(currently only 1) - default 1]** - to start playing<br>
+**!zdrapki end** - to see if you won and get reward
+**!zdrapki print** - to reprint the card again. 
+
 ### EvilPyza Bot has been integrated with EvilPyza Radmin Season3 minecraft server
 ## Commands:
 **!season3 register <minecraft player name>** - to register for minecraft server economy
